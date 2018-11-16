@@ -7,6 +7,8 @@ package org.cdsframework.rest.opencds;
 
 import java.util.Set;
 import javax.ws.rs.core.Application;
+import org.cdsframework.rest.opencds.resources.CdsInputXmlMessageBodyReader;
+import org.cdsframework.rest.opencds.resources.CdsOutputXmlMessageBodyWriter;
 
 /**
  *
@@ -18,6 +20,8 @@ public class ApplicationConfig extends Application {
     @Override
     public Set<Class<?>> getClasses() {
         Set<Class<?>> resources = new java.util.HashSet<>();
+        resources.add(CdsInputXmlMessageBodyReader.class);
+        resources.add(CdsOutputXmlMessageBodyWriter.class);
         addRestResourceClasses(resources);
         return resources;
     }
@@ -30,6 +34,8 @@ public class ApplicationConfig extends Application {
      */
     private void addRestResourceClasses(Set<Class<?>> resources) {
         resources.add(org.cdsframework.rest.opencds.EvaluateResource.class);
+        resources.add(org.cdsframework.rest.opencds.resources.CdsInputXmlMessageBodyReader.class);
+        resources.add(org.cdsframework.rest.opencds.resources.CdsOutputXmlMessageBodyWriter.class);
         resources.add(org.cdsframework.rs.provider.CoreJacksonJsonProvider.class);
     }
     

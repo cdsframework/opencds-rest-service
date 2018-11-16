@@ -8,18 +8,17 @@ package org.cdsframework.rest.opencds;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.UriInfo;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.Produces;
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PUT;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriInfo;
 import org.cdsframework.cds.service.OpenCdsService;
-import org.cdsframework.cds.vmr.CdsInputWrapper;
 import org.cdsframework.cds.vmr.CdsObjectAssist;
 import org.cdsframework.util.LogUtils;
 import org.cdsframework.util.support.cds.Config;
@@ -49,23 +48,31 @@ public class EvaluateResource {
      * Retrieves representation of an instance of
      * org.cdsframework.rest.opencds.EvaluateResource
      *
-     * @param payload
+     * @param cdsInput
      * @param scopingEntityId
      * @param businessId
      * @param version
-     * @param executionDate
-     * @return an instance of java.lang.String
+     * @param executionDateString
+     * @param header
+     * @param response
+     * @return
+     * @throws java.text.ParseException
      */
     @POST
-    @Produces(MediaType.APPLICATION_XML)
+    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Path("evaluate/{scopingEntityId}/{businessId}/{version}/{executionDate}")
-    public byte[] evaluate(byte[] payload,
+    public CDSOutput evaluate(CDSInput cdsInput,
             @PathParam("scopingEntityId") final String scopingEntityId,
             @PathParam("businessId") final String businessId,
             @PathParam("version") final String version,
-            @PathParam("executionDate") final String executionDateString) throws ParseException {
+            @PathParam("executionDate") final String executionDateString,
+            @Context HttpHeaders header,
+            @Context HttpServletResponse response) throws ParseException {
 
         final String METHODNAME = "evaluate ";
+
+        byte[] payload = CdsObjectAssist.cdsObjectToByteArray(cdsInput, CDSInput.class);
 
 //        logger.info(METHODNAME, "payload=", new String(payload));
         logger.info(METHODNAME, "scopingEntityId=", scopingEntityId);
@@ -84,10 +91,9 @@ public class EvaluateResource {
 
         byte[] evaluation = service.evaluate(payload, scopingEntityId, businessId, version, executionDate);
 
-        if (logger.isDebugEnabled()) {
-            CDSOutput result = CdsObjectAssist.cdsObjectFromByteArray(evaluation, CDSOutput.class);
-        }
+//        logger.info(METHODNAME, "evaluation=", new String(evaluation));
+        CDSOutput result = CdsObjectAssist.cdsObjectFromByteArray(evaluation, CDSOutput.class);
 
-        return evaluation;
+        return result;
     }
 }
