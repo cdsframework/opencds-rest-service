@@ -27,15 +27,15 @@ import org.opencds.vmr.v1_0.schema.CDSInput;
 @Consumes(MediaType.APPLICATION_XML)
 public class CdsInputXmlMessageBodyReader implements MessageBodyReader<CDSInput> {
 
-    private static LogUtils logger = LogUtils.getLogger(CdsInputXmlMessageBodyReader.class);
+//    private static LogUtils logger = LogUtils.getLogger(CdsInputXmlMessageBodyReader.class);
 
     @Override
     public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        final String METHODNAME = "isReadable ";
-        logger.info(METHODNAME, "type=", type);
-        logger.info(METHODNAME, "genericType=", genericType);
-        logger.info(METHODNAME, "annotations=", annotations);
-        logger.info(METHODNAME, "mediaType=", mediaType);
+//        final String METHODNAME = "isReadable ";
+//        logger.info(METHODNAME, "type=", type);
+//        logger.info(METHODNAME, "genericType=", genericType);
+//        logger.info(METHODNAME, "annotations=", annotations);
+//        logger.info(METHODNAME, "mediaType=", mediaType);
         return true;
     }
 
@@ -48,11 +48,11 @@ public class CdsInputXmlMessageBodyReader implements MessageBodyReader<CDSInput>
             MultivaluedMap<String, String> httpHeaders,
             InputStream entityStream)
             throws IOException, WebApplicationException {
-        final String METHODNAME = "readFrom ";
-        logger.info(METHODNAME, "type=", type);
-        logger.info(METHODNAME, "genericType=", genericType);
-        logger.info(METHODNAME, "annotations=", annotations);
-        logger.info(METHODNAME, "mediaType=", mediaType);
+//        final String METHODNAME = "readFrom ";
+//        logger.info(METHODNAME, "type=", type);
+//        logger.info(METHODNAME, "genericType=", genericType);
+//        logger.info(METHODNAME, "annotations=", annotations);
+//        logger.info(METHODNAME, "mediaType=", mediaType);
 
         return MarshalUtils.unmarshal(entityStream, CDSInput.class);
 

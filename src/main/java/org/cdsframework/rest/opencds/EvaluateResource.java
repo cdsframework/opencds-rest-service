@@ -5,6 +5,8 @@
  */
 package org.cdsframework.rest.opencds;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -20,8 +22,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriInfo;
 import org.cdsframework.cds.service.OpenCdsService;
 import org.cdsframework.cds.vmr.CdsObjectAssist;
+import org.cdsframework.enumeration.DeploymentEnvironment;
 import org.cdsframework.util.LogUtils;
-import org.cdsframework.util.support.cds.Config;
 import org.opencds.vmr.v1_0.schema.CDSInput;
 import org.opencds.vmr.v1_0.schema.CDSOutput;
 
@@ -61,14 +63,15 @@ public class EvaluateResource {
     @POST
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @Path("evaluate/{scopingEntityId}/{businessId}/{version}/{executionDate}")
+    @Path("evaluate/{environment}/{scopingEntityId}/{businessId}/{version}/{executionDate}")
     public CDSOutput evaluate(CDSInput cdsInput,
             @PathParam("scopingEntityId") final String scopingEntityId,
             @PathParam("businessId") final String businessId,
             @PathParam("version") final String version,
             @PathParam("executionDate") final String executionDateString,
+            @PathParam("environment") final String environment,
             @Context HttpHeaders header,
-            @Context HttpServletResponse response) throws ParseException {
+            @Context HttpServletResponse response) throws ParseException, UnsupportedEncodingException {
 
         final String METHODNAME = "evaluate ";
 
@@ -79,13 +82,16 @@ public class EvaluateResource {
         logger.info(METHODNAME, "businessId=", businessId);
         logger.info(METHODNAME, "version=", version);
         logger.info(METHODNAME, "executionDateString=", executionDateString);
+        logger.info(METHODNAME, "environment=", environment);
+
+        DeploymentEnvironment deploymentEnvironment = DeploymentEnvironment.valueOf(environment.toUpperCase());
+        
+        String endPoint = System.getProperty("cds.endpoint." + deploymentEnvironment.toString().toLowerCase());
+        
+        logger.info(METHODNAME, "endPoint=", endPoint);
 
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
         Date executionDate = format.parse(executionDateString);
-
-        logger.info("Starting evaluate...");
-
-        String endPoint = Config.getCdsDefaultEndpoint();
 
         OpenCdsService service = OpenCdsService.getOpenCdsService(endPoint);
 

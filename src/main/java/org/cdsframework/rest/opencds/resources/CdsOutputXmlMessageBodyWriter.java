@@ -22,25 +22,25 @@ import org.opencds.vmr.v1_0.schema.CDSOutput;
 @Produces(MediaType.APPLICATION_XML)
 public class CdsOutputXmlMessageBodyWriter implements MessageBodyWriter<CDSOutput>  {
 
-    private static LogUtils logger = LogUtils.getLogger(CdsOutputXmlMessageBodyWriter.class);
+//    private static LogUtils logger = LogUtils.getLogger(CdsOutputXmlMessageBodyWriter.class);
 
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        final String METHODNAME = "isWriteable ";
-        logger.info(METHODNAME, "type=", type);
-        logger.info(METHODNAME, "genericType=", genericType);
-        logger.info(METHODNAME, "annotations=", annotations);
-        logger.info(METHODNAME, "mediaType=", mediaType);
+//        final String METHODNAME = "isWriteable ";
+//        logger.info(METHODNAME, "type=", type);
+//        logger.info(METHODNAME, "genericType=", genericType);
+//        logger.info(METHODNAME, "annotations=", annotations);
+//        logger.info(METHODNAME, "mediaType=", mediaType);
         return type == CDSOutput.class;
     }
 
     @Override
     public long getSize(CDSOutput t, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        final String METHODNAME = "getSize ";
-        logger.info(METHODNAME, "type=", type);
-        logger.info(METHODNAME, "genericType=", genericType);
-        logger.info(METHODNAME, "annotations=", annotations);
-        logger.info(METHODNAME, "mediaType=", mediaType);
+//        final String METHODNAME = "getSize ";
+//        logger.info(METHODNAME, "type=", type);
+//        logger.info(METHODNAME, "genericType=", genericType);
+//        logger.info(METHODNAME, "annotations=", annotations);
+//        logger.info(METHODNAME, "mediaType=", mediaType);
         return 0;
     }
 
@@ -54,12 +54,12 @@ public class CdsOutputXmlMessageBodyWriter implements MessageBodyWriter<CDSOutpu
             MultivaluedMap<String, Object> httpHeaders,
             OutputStream out)
             throws IOException, WebApplicationException {
-        final String METHODNAME = "writeTo ";
-        logger.info(METHODNAME, "type=", type);
-        logger.info(METHODNAME, "genericType=", genericType);
-        logger.info(METHODNAME, "annotations=", annotations);
-        logger.info(METHODNAME, "mediaType=", mediaType);
-        logger.info(METHODNAME, "httpHeaders=", httpHeaders);
+//        final String METHODNAME = "writeTo ";
+//        logger.info(METHODNAME, "type=", type);
+//        logger.info(METHODNAME, "genericType=", genericType);
+//        logger.info(METHODNAME, "annotations=", annotations);
+//        logger.info(METHODNAME, "mediaType=", mediaType);
+//        logger.info(METHODNAME, "httpHeaders=", httpHeaders);
         MarshalUtils.marshal(cdsOutput, out);
     }
     
