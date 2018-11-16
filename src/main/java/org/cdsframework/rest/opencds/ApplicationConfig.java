@@ -36,7 +36,6 @@ public class ApplicationConfig extends Application {
         resources.add(org.cdsframework.rest.opencds.EvaluateResource.class);
         resources.add(org.cdsframework.rest.opencds.resources.CdsInputXmlMessageBodyReader.class);
         resources.add(org.cdsframework.rest.opencds.resources.CdsOutputXmlMessageBodyWriter.class);
-        resources.add(org.cdsframework.rs.provider.CoreJacksonJsonProvider.class);
     }
     
 }
