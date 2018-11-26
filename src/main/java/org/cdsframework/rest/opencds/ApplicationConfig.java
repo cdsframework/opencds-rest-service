@@ -7,8 +7,8 @@ package org.cdsframework.rest.opencds;
 
 import java.util.Set;
 import javax.ws.rs.core.Application;
-import org.cdsframework.rest.opencds.resources.CdsInputXmlMessageBodyReader;
-import org.cdsframework.rest.opencds.resources.CdsOutputXmlMessageBodyWriter;
+import org.cdsframework.opencds.rest.message.body.CdsInputXmlMessageBodyReader;
+import org.cdsframework.opencds.rest.message.body.CdsOutputXmlMessageBodyWriter;
 
 /**
  *
@@ -33,9 +33,11 @@ public class ApplicationConfig extends Application {
      * If required, comment out calling this method in getClasses().
      */
     private void addRestResourceClasses(Set<Class<?>> resources) {
+        resources.add(org.cdsframework.opencds.rest.message.body.CdsInputXmlMessageBodyReader.class);
+        resources.add(org.cdsframework.opencds.rest.message.body.CdsInputXmlMessageBodyWriter.class);
+        resources.add(org.cdsframework.opencds.rest.message.body.CdsOutputXmlMessageBodyReader.class);
+        resources.add(org.cdsframework.opencds.rest.message.body.CdsOutputXmlMessageBodyWriter.class);
         resources.add(org.cdsframework.rest.opencds.EvaluateResource.class);
-        resources.add(org.cdsframework.rest.opencds.resources.CdsInputXmlMessageBodyReader.class);
-        resources.add(org.cdsframework.rest.opencds.resources.CdsOutputXmlMessageBodyWriter.class);
     }
     
 }
