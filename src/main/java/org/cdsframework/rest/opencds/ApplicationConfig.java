@@ -8,6 +8,8 @@ package org.cdsframework.rest.opencds;
 import java.util.Set;
 import javax.ws.rs.core.Application;
 import org.cdsframework.opencds.rest.message.body.CdsInputXmlMessageBodyReader;
+import org.cdsframework.opencds.rest.message.body.CdsInputXmlMessageBodyWriter;
+import org.cdsframework.opencds.rest.message.body.CdsOutputXmlMessageBodyReader;
 import org.cdsframework.opencds.rest.message.body.CdsOutputXmlMessageBodyWriter;
 
 /**
@@ -22,6 +24,10 @@ public class ApplicationConfig extends Application {
         Set<Class<?>> resources = new java.util.HashSet<>();
         resources.add(CdsInputXmlMessageBodyReader.class);
         resources.add(CdsOutputXmlMessageBodyWriter.class);
+        resources.add(CdsInputXmlMessageBodyReader.class);
+        resources.add(CdsInputXmlMessageBodyWriter.class);
+        resources.add(CdsOutputXmlMessageBodyReader.class);
+        resources.add(CdsOutputXmlMessageBodyWriter.class);
         addRestResourceClasses(resources);
         return resources;
     }
@@ -33,10 +39,6 @@ public class ApplicationConfig extends Application {
      * If required, comment out calling this method in getClasses().
      */
     private void addRestResourceClasses(Set<Class<?>> resources) {
-        resources.add(org.cdsframework.opencds.rest.message.body.CdsInputXmlMessageBodyReader.class);
-        resources.add(org.cdsframework.opencds.rest.message.body.CdsInputXmlMessageBodyWriter.class);
-        resources.add(org.cdsframework.opencds.rest.message.body.CdsOutputXmlMessageBodyReader.class);
-        resources.add(org.cdsframework.opencds.rest.message.body.CdsOutputXmlMessageBodyWriter.class);
         resources.add(org.cdsframework.rest.opencds.EvaluateResource.class);
     }
     
