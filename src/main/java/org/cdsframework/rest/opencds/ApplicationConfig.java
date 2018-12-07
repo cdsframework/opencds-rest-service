@@ -5,41 +5,35 @@
  */
 package org.cdsframework.rest.opencds;
 
-import java.util.Set;
-import javax.ws.rs.core.Application;
+import javax.ws.rs.ApplicationPath;
 import org.cdsframework.opencds.rest.message.body.CdsInputXmlMessageBodyReader;
 import org.cdsframework.opencds.rest.message.body.CdsInputXmlMessageBodyWriter;
 import org.cdsframework.opencds.rest.message.body.CdsOutputXmlMessageBodyReader;
 import org.cdsframework.opencds.rest.message.body.CdsOutputXmlMessageBodyWriter;
+import org.cdsframework.rs.provider.CORSResponseFilter;
+import org.cdsframework.rs.support.CoreRsConstants;
+import org.glassfish.jersey.client.filter.EncodingFilter;
+import org.glassfish.jersey.message.DeflateEncoder;
+import org.glassfish.jersey.message.GZipEncoder;
+import org.glassfish.jersey.server.ResourceConfig;
 
 /**
  *
  * @author sdn
  */
-@javax.ws.rs.ApplicationPath("api")
-public class ApplicationConfig extends Application {
+@ApplicationPath(CoreRsConstants.RESOURCE_ROOT)
+public class ApplicationConfig extends ResourceConfig {
 
-    @Override
-    public Set<Class<?>> getClasses() {
-        Set<Class<?>> resources = new java.util.HashSet<>();
-        resources.add(CdsInputXmlMessageBodyReader.class);
-        resources.add(CdsOutputXmlMessageBodyWriter.class);
-        resources.add(CdsInputXmlMessageBodyReader.class);
-        resources.add(CdsInputXmlMessageBodyWriter.class);
-        resources.add(CdsOutputXmlMessageBodyReader.class);
-        resources.add(CdsOutputXmlMessageBodyWriter.class);
-        addRestResourceClasses(resources);
-        return resources;
+    public ApplicationConfig() {
+        super();
+        register(CdsInputXmlMessageBodyReader.class);
+        register(CdsInputXmlMessageBodyWriter.class);
+        register(CdsOutputXmlMessageBodyWriter.class);
+        register(CdsOutputXmlMessageBodyReader.class);
+        register(EvaluateResource.class);
+        register(CORSResponseFilter.class);
+        register(DeflateEncoder.class);
+        register(GZipEncoder.class);
+        register(EncodingFilter.class);
     }
-
-    /**
-     * Do not modify addRestResourceClasses() method.
-     * It is automatically populated with
-     * all resources defined in the project.
-     * If required, comment out calling this method in getClasses().
-     */
-    private void addRestResourceClasses(Set<Class<?>> resources) {
-        resources.add(org.cdsframework.rest.opencds.EvaluateResource.class);
-    }
-    
 }

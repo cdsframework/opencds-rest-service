@@ -7,7 +7,6 @@ package org.cdsframework.rest.opencds;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -17,7 +16,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -26,7 +24,7 @@ import javax.ws.rs.core.UriInfo;
 import org.cdsframework.cds.service.OpenCdsService;
 import org.cdsframework.cds.vmr.CdsObjectAssist;
 import org.cdsframework.enumeration.DeploymentEnvironment;
-import org.cdsframework.exceptions.CdsException;
+import org.cdsframework.rs.support.CoreRsConstants;
 import org.cdsframework.util.LogUtils;
 import org.opencds.vmr.v1_0.schema.CDSInput;
 import org.opencds.vmr.v1_0.schema.CDSOutput;
@@ -36,7 +34,7 @@ import org.opencds.vmr.v1_0.schema.CDSOutput;
  *
  * @author sdn
  */
-@Path("resources")
+@Path(CoreRsConstants.GENERAL_RS_ROOT)
 public class EvaluateResource {
 
     private static LogUtils logger = LogUtils.getLogger(EvaluateResource.class);
