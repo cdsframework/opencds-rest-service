@@ -9,7 +9,7 @@
         </layout>
     </appender>
     <appender name="MainFileAppender" class="org.apache.log4j.DailyRollingFileAppender">
-        <param name="File" value="/usr/local/tomcat/webapps/opencds-rest-service/opencds-rest-service.log"/>
+        <param name="File" value="/usr/local/tomcat/logs/opencds-rest-service.log"/>
         <param name="Append" value="true"/>
         <param name="DatePattern" value="'.'yyyy-MM-dd"/>
         <layout class="org.apache.log4j.PatternLayout">
