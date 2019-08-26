@@ -3,11 +3,11 @@ steps:
   args:
   - kms
   - decrypt
-  - --ciphertext-file=settings.enc
+  - --ciphertext-file=cloudbuild/settings.enc
   - --plaintext-file=/root/.m2/settings.xml
   - --location=global
-  - --keyring=BB
-  - --key=bb-key
+  - --keyring=rckms-cloud-build
+  - --key=github
   volumes:
   - name: 'm2'
     path: /root/.m2
