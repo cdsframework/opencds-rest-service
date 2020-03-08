@@ -26,3 +26,13 @@ steps:
   volumes:
   - name: 'm2'
     path: /root/.m2
+
+# trigger opencds ice build
+- name: gcr.io/cloud-builders/curl
+  entrypoint: 'sh'
+  args: ['-c', 'curl -X POST https://cloudbuild.googleapis.com/v1/projects/cdsframework/triggers/de07e3ef-8d51-4591-b7a9-afcc24dff544:run']
+
+# trigger opencds rckms build
+- name: gcr.io/cloud-builders/curl
+  entrypoint: 'sh'
+  args: ['-c', 'curl -X POST https://cloudbuild.googleapis.com/v1/projects/hln-rckms/triggers/a8c4e364-b6f2-4e1b-843d-1d9ad7ea10a:run']
