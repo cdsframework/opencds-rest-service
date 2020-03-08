@@ -32,9 +32,3 @@ steps:
   dir: /root
   entrypoint: gcloud
   args: ['--quiet', 'beta', 'builds', 'triggers', 'run', '--branch', 'DEV', '445d0670-ae92-44fc-819c-2182e3b3d035']
-
-# trigger opencds rckms build
-- name: gcr.io/hln-internal/gsutil-beta:master
-  dir: /root
-  entrypoint: gcloud
-  args: ['--quiet', 'beta', 'builds', 'triggers', 'run', '--branch', $BRANCH_NAME, 'a8c4e364-b6f2-4e1b-843d-1d9ad7ea10a']
