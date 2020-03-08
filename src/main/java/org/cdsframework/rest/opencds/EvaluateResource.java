@@ -14,6 +14,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -36,6 +40,7 @@ import org.omg.dss.evaluation.EvaluateAtSpecifiedTime;
 import org.omg.dss.evaluation.EvaluateAtSpecifiedTimeResponse;
 import org.omg.dss.evaluation.EvaluateResponse;
 import org.omg.dss.evaluation.requestresponse.EvaluationResponse;
+import org.omg.dss.evaluation.requestresponse.KMEvaluationRequest;
 import org.opencds.dss.evaluate.EvaluationService;
 
 /**
@@ -63,7 +68,7 @@ public class EvaluateResource {
     }
 
     @GET
-    @Produces({MediaType.TEXT_PLAIN})
+    @Produces({ MediaType.TEXT_PLAIN })
     @Path("tz")
     public String tz() {
         return TimeZone.getDefault().getID();
@@ -89,29 +94,17 @@ public class EvaluateResource {
      * @throws InvalidTimeZoneOffsetExceptionFault
      * @throws DSSRuntimeExceptionFault
      * @throws JAXBException
-     * @throws TransformerException 
+     * @throws TransformerException
      */
-   @POST
-    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @POST
+    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
     @Path("evaluate")
-    public Response evaluate(
-            String evaluateString,
-            @Context HttpHeaders header,
-            @Context HttpServletResponse response)
-            throws ParseException,
-            UnsupportedEncodingException,
-            IOException,
-            InvalidDriDataFormatExceptionFault,
-            UnrecognizedLanguageExceptionFault,
-            RequiredDataNotProvidedExceptionFault,
-            UnsupportedLanguageExceptionFault,
-            UnrecognizedScopedEntityExceptionFault,
-            EvaluationExceptionFault,
-            InvalidTimeZoneOffsetExceptionFault,
-            DSSRuntimeExceptionFault,
-            JAXBException,
-            TransformerException {
+    public Response evaluate(String evaluateString, @Context HttpHeaders header, @Context HttpServletResponse response)
+            throws ParseException, UnsupportedEncodingException, IOException, InvalidDriDataFormatExceptionFault,
+            UnrecognizedLanguageExceptionFault, RequiredDataNotProvidedExceptionFault,
+            UnsupportedLanguageExceptionFault, UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
+            InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
 
         final String METHODNAME = "evaluate ";
 
@@ -123,21 +116,21 @@ public class EvaluateResource {
         log.debug(METHODNAME + "mediaType=" + mediaType);
         log.debug(METHODNAME + "mediaType.toString()=" + mediaType.toString());
         log.debug(METHODNAME + "MediaType.APPLICATION_JSON=" + MediaType.APPLICATION_JSON);
-        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_JSON)=" + mediaType.toString().equals(MediaType.APPLICATION_JSON));
-        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_XML)=" + mediaType.toString().equals(MediaType.APPLICATION_XML));
+        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_JSON)="
+                + mediaType.toString().equals(MediaType.APPLICATION_JSON));
+        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_XML)="
+                + mediaType.toString().equals(MediaType.APPLICATION_XML));
 
         if (mediaType.toString().equals(MediaType.APPLICATION_JSON)) {
             evaluate = mapper.readValue(evaluateString, Evaluate.class);
         } else if (mediaType.toString().equals(MediaType.APPLICATION_XML)) {
-            evaluate = MarshalUtils.unmarshal(
-                    new ByteArrayInputStream(evaluateString.getBytes()),
-                    Evaluate.class);
+            evaluate = MarshalUtils.unmarshal(new ByteArrayInputStream(evaluateString.getBytes()), Evaluate.class);
         } else {
             throw new IllegalArgumentException("Unsupported media type: " + mediaType);
         }
 
         try {
-
+            preEvaluate(evaluate);
             Response.ResponseBuilder responseBuilder;
             EvaluateResponse evaluateResponse = evaluationService.evaluate(evaluate);
             EvaluationResponse evaluationResponse = evaluateResponse.getEvaluationResponse();
@@ -159,7 +152,7 @@ public class EvaluateResource {
 
         }
     }
-    
+
     /**
      * Retrieves representation of an instance of
      * org.cdsframework.rest.opencds.EvaluateResource
@@ -182,26 +175,15 @@ public class EvaluateResource {
      * @throws javax.xml.transform.TransformerException
      */
     @POST
-    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
     @Path("evaluateAtSpecifiedTime")
-    public Response evaluateAtSpecifiedTime(
-            String evaluateAtSpecifiedTimeString,
-            @Context HttpHeaders header,
+    public Response evaluateAtSpecifiedTime(String evaluateAtSpecifiedTimeString, @Context HttpHeaders header,
             @Context HttpServletResponse response)
-            throws ParseException,
-            UnsupportedEncodingException,
-            IOException,
-            InvalidDriDataFormatExceptionFault,
-            UnrecognizedLanguageExceptionFault,
-            RequiredDataNotProvidedExceptionFault,
-            UnsupportedLanguageExceptionFault,
-            UnrecognizedScopedEntityExceptionFault,
-            EvaluationExceptionFault,
-            InvalidTimeZoneOffsetExceptionFault,
-            DSSRuntimeExceptionFault,
-            JAXBException,
-            TransformerException {
+            throws ParseException, UnsupportedEncodingException, IOException, InvalidDriDataFormatExceptionFault,
+            UnrecognizedLanguageExceptionFault, RequiredDataNotProvidedExceptionFault,
+            UnsupportedLanguageExceptionFault, UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
+            InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
 
         final String METHODNAME = "evaluateAtSpecifiedTime ";
 
@@ -213,23 +195,26 @@ public class EvaluateResource {
         log.debug(METHODNAME + "mediaType=" + mediaType);
         log.debug(METHODNAME + "mediaType.toString()=" + mediaType.toString());
         log.debug(METHODNAME + "MediaType.APPLICATION_JSON=" + MediaType.APPLICATION_JSON);
-        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_JSON)=" + mediaType.toString().equals(MediaType.APPLICATION_JSON));
-        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_XML)=" + mediaType.toString().equals(MediaType.APPLICATION_XML));
+        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_JSON)="
+                + mediaType.toString().equals(MediaType.APPLICATION_JSON));
+        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_XML)="
+                + mediaType.toString().equals(MediaType.APPLICATION_XML));
 
         if (mediaType.toString().equals(MediaType.APPLICATION_JSON)) {
             evaluateAtSpecifiedTime = mapper.readValue(evaluateAtSpecifiedTimeString, EvaluateAtSpecifiedTime.class);
         } else if (mediaType.toString().equals(MediaType.APPLICATION_XML)) {
             evaluateAtSpecifiedTime = MarshalUtils.unmarshal(
-                    new ByteArrayInputStream(evaluateAtSpecifiedTimeString.getBytes()),
-                    EvaluateAtSpecifiedTime.class);
+                    new ByteArrayInputStream(evaluateAtSpecifiedTimeString.getBytes()), EvaluateAtSpecifiedTime.class);
         } else {
             throw new IllegalArgumentException("Unsupported media type: " + mediaType);
         }
 
         try {
 
+            preEvaluate(evaluateAtSpecifiedTime);
             Response.ResponseBuilder responseBuilder;
-            EvaluateAtSpecifiedTimeResponse evaluateAtSpecifiedTimeResponse = evaluationService.evaluateAtSpecifiedTime(evaluateAtSpecifiedTime);
+            EvaluateAtSpecifiedTimeResponse evaluateAtSpecifiedTimeResponse = evaluationService
+                    .evaluateAtSpecifiedTime(evaluateAtSpecifiedTime);
             EvaluationResponse evaluationResponse = evaluateAtSpecifiedTimeResponse.getEvaluationResponse();
 
             List<MediaType> acceptableMediaTypes = header.getAcceptableMediaTypes();
@@ -248,5 +233,61 @@ public class EvaluateResource {
         } finally {
 
         }
+    }
+
+    private void preEvaluate(EvaluateAtSpecifiedTime evaluateAtSpecifiedTime) {
+        final String METHODNAME = "preEvaluate ";
+        if (evaluateAtSpecifiedTime == null || evaluateAtSpecifiedTime.getEvaluationRequest() == null
+                || evaluateAtSpecifiedTime.getEvaluationRequest().getKmEvaluationRequest() == null) {
+            log.debug(METHODNAME + "an evaluateAtSpecifiedTime element is null!");
+            return;
+        }
+        preEvaluate(evaluateAtSpecifiedTime.getEvaluationRequest().getKmEvaluationRequest());
+    }
+
+    private void preEvaluate(Evaluate evaluate) {
+        final String METHODNAME = "preEvaluate ";
+        if (evaluate == null || evaluate.getEvaluationRequest() == null
+                || evaluate.getEvaluationRequest().getKmEvaluationRequest() == null) {
+            log.debug(METHODNAME + "an evaluate element is null!");
+            return;
+        }
+        preEvaluate(evaluate.getEvaluationRequest().getKmEvaluationRequest());
+    }
+
+    private void preEvaluate(List<KMEvaluationRequest> kmEvaluationRequests) {
+        final String METHODNAME = "preEvaluate ";
+        if (kmEvaluationRequests == null) {
+            log.debug(METHODNAME + "kmEvaluationRequests is null!");
+            return;
+        }
+        for (KMEvaluationRequest kmEvaluationRequest : kmEvaluationRequests) {
+            preEvaluate(kmEvaluationRequest);
+        }
+    }
+
+    private void preEvaluate(KMEvaluationRequest kmEvaluationRequest) {
+        final String METHODNAME = "preEvaluate ";
+        long start = System.nanoTime();
+        if (kmEvaluationRequest == null || kmEvaluationRequest.getKmId() == null
+                || kmEvaluationRequest.getKmId().getBusinessId() == null
+                || kmEvaluationRequest.getKmId().getScopingEntityId() == null
+                || kmEvaluationRequest.getKmId().getVersion() == null) {
+            log.debug(METHODNAME + "a kmId element is null!");
+            return;
+        }
+        String preEvaluateHookUri = System.getProperty("preEvaluateHookUri");
+        if (preEvaluateHookUri == null) {
+            log.debug(METHODNAME + "preEvaluateHookUri is null!");
+            return;
+        }
+        Client client = ClientBuilder.newClient();
+        WebTarget webTarget = client.target(preEvaluateHookUri).path(kmEvaluationRequest.getKmId().getBusinessId())
+                .path(kmEvaluationRequest.getKmId().getScopingEntityId())
+                .path(kmEvaluationRequest.getKmId().getVersion());
+        Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON);
+        Response response = invocationBuilder.get();
+        log.info(METHODNAME + "response.getStatus(): " + response.getStatus() + " duration: "
+                + ((System.nanoTime() - start) / 1000000) + "ms");
     }
 }
