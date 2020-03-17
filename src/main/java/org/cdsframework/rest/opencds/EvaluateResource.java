@@ -277,7 +277,7 @@ public class EvaluateResource {
             return;
         }
         String preEvaluateHookUri = System.getProperty("preEvaluateHookUri");
-        if (preEvaluateHookUri == null) {
+        if (preEvaluateHookUri == null || preEvaluateHookUri.trim().isEmpty()) {
             log.debug(METHODNAME + "preEvaluateHookUri is null!");
             return;
         }
