@@ -1,56 +1,33 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.cdsframework.rest.opencds;
+
+import org.opencds.config.api.model.impl.CDMIdImpl;
 
 /**
  *
  * @author sdn
  */
 public class CDMUpdate {
-    
+
     private byte[] cdm;
 
-    private String code;
-
-    private String oid;
+    private CDMIdImpl cdmId;
 
     /**
-     * Get the value of oid
+     * Get the value of cdmId
      *
-     * @return the value of oid
+     * @return the value of cdmId
      */
-    public String getOid() {
-        return oid;
+    public CDMIdImpl getCdmId() {
+        return cdmId;
     }
 
     /**
-     * Set the value of oid
+     * Set the value of cdmId
      *
-     * @param oid new value of oid
+     * @param cdmId new value of cdmId
      */
-    public void setOid(String oid) {
-        this.oid = oid;
-    }
-
-    /**
-     * Get the value of code
-     *
-     * @return the value of code
-     */
-    public String getCode() {
-        return code;
-    }
-
-    /**
-     * Set the value of code
-     *
-     * @param code new value of code
-     */
-    public void setCode(String code) {
-        this.code = code;
+    public void setCdmId(CDMIdImpl cdmId) {
+        this.cdmId = cdmId;
     }
 
     /**
@@ -70,5 +47,4 @@ public class CDMUpdate {
     public void setCdm(byte[] cdm) {
         this.cdm = cdm;
     }
-
 }
