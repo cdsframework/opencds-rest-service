@@ -91,17 +91,75 @@ public class ConfigUtils {
         boolean created = false;
         if (configurationService.getKnowledgeRepository().getKnowledgeModuleService().find(kmId) == null) {
             created = true;
+            
+
+            String defaultCdmCodeSystem = System.getProperty("defaultCdmCodeSystem");
+            if (defaultCdmCodeSystem == null || defaultCdmCodeSystem.trim().isEmpty()) {
+                throw new IllegalStateException(METHODNAME + "defaultCdmCodeSystem is null!");
+            } else {
+                log.debug(METHODNAME + "defaultCdmCodeSystem: " + defaultCdmCodeSystem);
+            }
+
+            String defaultCdmCode = System.getProperty("defaultCdmCode");
+            if (defaultCdmCode == null || defaultCdmCode.trim().isEmpty()) {
+                throw new IllegalStateException(METHODNAME + "defaultCdmCode is null!");
+            } else {
+                log.debug(METHODNAME + "defaultCdmCode: " + defaultCdmCode);
+            }
+
+            String defaultCdmVersion = System.getProperty("defaultCdmVersion");
+            if (defaultCdmVersion == null || defaultCdmVersion.trim().isEmpty()) {
+                throw new IllegalStateException(METHODNAME + "defaultCdmVersion is null!");
+            } else {
+                log.debug(METHODNAME + "defaultCdmVersion: " + defaultCdmVersion);
+            }
+
+            String defaultCdmExecutionEngine = System.getProperty("defaultCdmExecutionEngine");
+            if (defaultCdmExecutionEngine == null || defaultCdmExecutionEngine.trim().isEmpty()) {
+                throw new IllegalStateException(METHODNAME + "defaultCdmExecutionEngine is null!");
+            } else {
+                log.debug(METHODNAME + "defaultCdmExecutionEngine: " + defaultCdmExecutionEngine);
+            }
+
+            String defaultSsidScopingEntityId = System.getProperty("defaultSsidScopingEntityId");
+            if (defaultSsidScopingEntityId == null || defaultSsidScopingEntityId.trim().isEmpty()) {
+                throw new IllegalStateException(METHODNAME + "defaultSsidScopingEntityId is null!");
+            } else {
+                log.debug(METHODNAME + "defaultSsidScopingEntityId: " + defaultSsidScopingEntityId);
+            }
+
+            String defaultSsidBusinessId = System.getProperty("defaultSsidBusinessId");
+            if (defaultSsidBusinessId == null || defaultSsidBusinessId.trim().isEmpty()) {
+                throw new IllegalStateException(METHODNAME + "defaultSsidBusinessId is null!");
+            } else {
+                log.debug(METHODNAME + "defaultSsidBusinessId: " + defaultSsidBusinessId);
+            }
+
+            String defaultSsidVersion = System.getProperty("defaultSsidVersion");
+            if (defaultSsidVersion == null || defaultSsidVersion.trim().isEmpty()) {
+                throw new IllegalStateException(METHODNAME + "defaultSsidVersion is null!");
+            } else {
+                log.debug(METHODNAME + "defaultSsidVersion: " + defaultSsidVersion);
+            }
+
+            String defaultPrimaryProcess = System.getProperty("defaultPrimaryProcess");
+            if (defaultPrimaryProcess == null || defaultPrimaryProcess.trim().isEmpty()) {
+                throw new IllegalStateException(METHODNAME + "defaultPrimaryProcess is null!");
+            } else {
+                log.debug(METHODNAME + "defaultPrimaryProcess: " + defaultPrimaryProcess);
+            }
+
             KnowledgeModuleImpl knowledgeModule = KnowledgeModuleImpl.create(
                     kmId,
                     KMStatus.APPROVED,
-                    "org.opencds.service.drools.v55.DroolsAdapter",
-                    SSIdImpl.create("org.opencds.vmr", "VMR", "1.0"),
-                    CDMIdImpl.create("2.16.840.1.113883.3.795.5.4.12.5.1", "RCKMS0000", "1.0"),
+                    defaultCdmExecutionEngine,
+                    SSIdImpl.create(defaultSsidScopingEntityId, defaultSsidBusinessId, defaultSsidVersion),
+                    CDMIdImpl.create(defaultCdmCodeSystem, defaultCdmCode, defaultCdmVersion),
                     new ArrayList<SecondaryCDM>(),
                     "PKG",
                     kmId.getScopingEntityId() + "^" + kmId.getBusinessId() + "^" + kmId.getVersion() + ".pkg",
                     true,
-                    "RCKMSReportingProcess",
+                    defaultPrimaryProcess,
                     new ArrayList<TraitId>(),
                     new ArrayList<PluginId>(),
                     new ArrayList<PluginId>(),
