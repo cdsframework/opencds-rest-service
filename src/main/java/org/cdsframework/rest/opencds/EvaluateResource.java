@@ -29,6 +29,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.transform.TransformerException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.cdsframework.rest.opencds.utils.ConfigUtils;
 import org.glassfish.jersey.client.ClientConfig;
 import org.omg.dss.DSSRuntimeExceptionFault;
 import org.omg.dss.EvaluationExceptionFault;
@@ -45,6 +46,9 @@ import org.omg.dss.evaluation.EvaluateResponse;
 import org.omg.dss.evaluation.requestresponse.EvaluationRequest;
 import org.omg.dss.evaluation.requestresponse.EvaluationResponse;
 import org.opencds.config.api.ConfigurationService;
+import org.opencds.config.api.model.CDMId;
+import org.opencds.config.schema.ConceptDeterminationMethod;
+import org.opencds.config.schema.ConceptDeterminationMethods;
 import org.opencds.dss.evaluate.EvaluationService;
 
 /**
@@ -248,7 +252,7 @@ public class EvaluateResource {
         }
     }
 
-    private void preEvaluate(EvaluateAtSpecifiedTime evaluateAtSpecifiedTime) {
+    private void preEvaluate(EvaluateAtSpecifiedTime evaluateAtSpecifiedTime) throws JAXBException, TransformerException {
         final String METHODNAME = "preEvaluate ";
         if (evaluateAtSpecifiedTime == null || evaluateAtSpecifiedTime.getEvaluationRequest() == null) {
             log.debug(METHODNAME + "an evaluateAtSpecifiedTime element is null!");
@@ -257,7 +261,7 @@ public class EvaluateResource {
         preEvaluate(evaluateAtSpecifiedTime.getEvaluationRequest());
     }
 
-    private void preEvaluate(Evaluate evaluate) {
+    private void preEvaluate(Evaluate evaluate) throws JAXBException, TransformerException {
         final String METHODNAME = "preEvaluate ";
         if (evaluate == null || evaluate.getEvaluationRequest() == null) {
             log.debug(METHODNAME + "an evaluate element is null!");
@@ -266,7 +270,7 @@ public class EvaluateResource {
         preEvaluate(evaluate.getEvaluationRequest());
     }
 
-    private void preEvaluate(EvaluationRequest evaluationRequest) {
+    private void preEvaluate(EvaluationRequest evaluationRequest) throws JAXBException, TransformerException {
         final String METHODNAME = "preEvaluate ";
         if (evaluationRequest == null) {
             log.debug(METHODNAME + "evaluationRequest is null!");
@@ -321,18 +325,7 @@ public class EvaluateResource {
                     case ENTITY_IDENTIFIER:
                         response = invocationBuilder.put(Entity.entity(evaluationRequest.getKmEvaluationRequest(), MediaType.APPLICATION_JSON_TYPE));
                         UpdateResponse updateResponse = response.readEntity(UpdateResponse.class);
-                        log.info(METHODNAME + "updateResponse: " + updateResponse);
-                        log.info(METHODNAME + "updateResponse.getCdmUpdate(): " + updateResponse.getCdmUpdate());
-                        log.info(METHODNAME + "updateResponse.getCdmUpdate().getCode(): " + updateResponse.getCdmUpdate().getCode());
-                        log.info(METHODNAME + "updateResponse.getCdmUpdate().getOid(): " + updateResponse.getCdmUpdate().getOid());
-                        log.info(METHODNAME + "updateResponse.getCdmUpdate().getCdm(): " + new String(updateResponse.getCdmUpdate().getCdm()));
-                        for (KMUpdate kmUpdate : updateResponse.getKmUpdates()) {
-                            log.info(METHODNAME + "kmUpdate.getEntityIdentifier(): " + kmUpdate.getEntityIdentifier());
-                            log.info(METHODNAME + "kmUpdate.getEntityIdentifier().getScopingEntityId(): " + kmUpdate.getEntityIdentifier().getScopingEntityId());
-                            log.info(METHODNAME + "kmUpdate.getEntityIdentifier().getBusinessId(): " + kmUpdate.getEntityIdentifier().getBusinessId());
-                            log.info(METHODNAME + "kmUpdate.getEntityIdentifier().getVersion(): " + kmUpdate.getEntityIdentifier().getVersion());
-                            log.info(METHODNAME + "kmUpdate.getKm(): " + new String(kmUpdate.getKmPackage()));
-                        }
+                        ConfigUtils.update(updateResponse, configurationService);
                         break;
                     case EVALUATION_REQUEST:
                         response = invocationBuilder.put(Entity.entity(evaluationRequest, MediaType.APPLICATION_JSON_TYPE));
@@ -346,7 +339,7 @@ public class EvaluateResource {
                         throw new IllegalStateException("Unhandled hook type: " + preEvaluateHookType.toString());
                 }
             }
-            log.info(METHODNAME + "response.getStatus(): " + response.getStatus());
+            log.debug(METHODNAME + "response.getStatus(): " + response.getStatus());
         } finally {
             log.info(METHODNAME + "duration: " + ((System.nanoTime() - start) / 1000000) + "ms");
         }

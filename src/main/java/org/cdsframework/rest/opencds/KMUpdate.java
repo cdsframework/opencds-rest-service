@@ -1,6 +1,6 @@
 package org.cdsframework.rest.opencds;
 
-import org.omg.dss.common.EntityIdentifier;
+import org.opencds.config.api.model.impl.KMIdImpl;
 
 /**
  *
@@ -8,25 +8,25 @@ import org.omg.dss.common.EntityIdentifier;
  */
 public class KMUpdate {
     
-    private EntityIdentifier entityIdentifier;
+    private KMIdImpl kmId;
     private byte[] kmPackage;
 
     /**
-     * Get the value of entityIdentifier
+     * Get the value of kmId
      *
-     * @return the value of entityIdentifier
+     * @return the value of kmId
      */
-    public EntityIdentifier getEntityIdentifier() {
-        return entityIdentifier;
+    public KMIdImpl getKmId() {
+        return kmId;
     }
 
     /**
-     * Set the value of entityIdentifier
+     * Set the value of kmId
      *
-     * @param entityIdentifier new value of entityIdentifier
+     * @param kmId new value of kmId
      */
-    public void setEntityIdentifier(EntityIdentifier entityIdentifier) {
-        this.entityIdentifier = entityIdentifier;
+    public void setKmId(KMIdImpl kmId) {
+        this.kmId = kmId;
     }
 
     /**
