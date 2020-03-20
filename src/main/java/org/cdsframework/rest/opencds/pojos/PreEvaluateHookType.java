@@ -1,4 +1,4 @@
-package org.cdsframework.rest.opencds;
+package org.cdsframework.rest.opencds.pojos;
 
 /**
  *

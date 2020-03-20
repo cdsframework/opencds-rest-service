@@ -1,5 +1,6 @@
-package org.cdsframework.rest.opencds;
+package org.cdsframework.rest.opencds.pojos;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,6 +18,9 @@ public class UpdateResponse {
      * @return the value of kmUpdates
      */
     public List<KMUpdate> getKmUpdates() {
+        if (kmUpdates != null) {
+            kmUpdates = new ArrayList<>();
+        }
         return kmUpdates;
     }
 
