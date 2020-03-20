@@ -8,9 +8,11 @@ import javax.xml.bind.JAXBException;
 import javax.xml.transform.TransformerException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.cdsframework.rest.opencds.KMUpdate;
-import org.cdsframework.rest.opencds.MarshalUtils;
-import org.cdsframework.rest.opencds.UpdateResponse;
+import org.cdsframework.rest.opencds.pojos.CDMUpdateResult;
+import org.cdsframework.rest.opencds.pojos.KMUpdate;
+import org.cdsframework.rest.opencds.pojos.KMUpdateResult;
+import org.cdsframework.rest.opencds.pojos.UpdateResponse;
+import org.cdsframework.rest.opencds.pojos.UpdateResponseResult;
 import org.opencds.config.api.ConfigurationService;
 import org.opencds.config.api.model.CDMId;
 import org.opencds.config.api.model.KMId;
@@ -38,45 +40,105 @@ public class ConfigUtils {
      *
      * @param updateResponse
      * @param configurationService
-     * @throws JAXBException
-     * @throws TransformerException
+     * @return result
      */
-    public static void update(UpdateResponse updateResponse, ConfigurationService configurationService) throws JAXBException, TransformerException {
+    public static UpdateResponseResult update(UpdateResponse updateResponse, ConfigurationService configurationService) {
         final String METHODNAME = "update ";
-        log.debug(METHODNAME + "updateResponse.getCdmUpdate().getCode(): " + updateResponse.getCdmUpdate().getCdmId().getCode());
-        log.debug(METHODNAME + "updateResponse.getCdmUpdate().getCodeSystem(): " + updateResponse.getCdmUpdate().getCdmId().getCodeSystem());
-        log.debug(METHODNAME + "updateResponse.getCdmUpdate().getVersion(): " + updateResponse.getCdmUpdate().getCdmId().getVersion());
-        log.debug(METHODNAME + "updateResponse.getCdmUpdate().getCdm() length: " + updateResponse.getCdmUpdate().getCdm().length);
-        if (updateResponse.getCdmUpdate().getCdm() != null && updateResponse.getCdmUpdate().getCdm().length > 0) {
-            ConceptDeterminationMethods cdms = MarshalUtils.unmarshal(
-                    new ByteArrayInputStream(updateResponse.getCdmUpdate().getCdm()),
-                    ConceptDeterminationMethods.class
-            );
+        UpdateResponseResult result = new UpdateResponseResult();
+        if (updateResponse != null
+                && updateResponse.getCdmUpdate() != null
+                && updateResponse.getCdmUpdate().getCdm() != null
+                && updateResponse.getCdmUpdate().getCdm().length > 0
+                && updateResponse.getCdmUpdate().getCdmId() != null
+                && updateResponse.getCdmUpdate().getCdmId().getCode() != null
+                && updateResponse.getCdmUpdate().getCdmId().getCodeSystem() != null
+                && updateResponse.getCdmUpdate().getCdmId().getVersion() != null) {
+
             CDMId cdmId = updateResponse.getCdmUpdate().getCdmId();
-            if (cdms.getConceptDeterminationMethod() == null) {
-                throw new IllegalStateException("cdms.getConceptDeterminationMethod() is null!");
+
+            log.debug(METHODNAME + "CDM code: " + cdmId.getCode());
+            log.debug(METHODNAME + "CDM codeSystem: " + cdmId.getCodeSystem());
+            log.debug(METHODNAME + "CDM version: " + cdmId.getVersion());
+            log.debug(METHODNAME + "CDM length: " + updateResponse.getCdmUpdate().getCdm().length);
+
+            ConceptDeterminationMethods cdms = null;
+
+            try {
+                cdms = MarshalUtils.unmarshal(
+                        new ByteArrayInputStream(updateResponse.getCdmUpdate().getCdm()),
+                        ConceptDeterminationMethods.class
+                );
+            } catch (JAXBException | TransformerException e) {
+                result.setCdm(new CDMUpdateResult(cdmId, 500, e.getMessage()));
+                log.error(e);
             }
-            if (cdms.getConceptDeterminationMethod().isEmpty()) {
-                throw new IllegalStateException("cdms.getConceptDeterminationMethod() is empty!");
+
+            if (cdms != null) {
+                if (cdms.getConceptDeterminationMethod() == null) {
+                    String error = "cdms.getConceptDeterminationMethod() is null!";
+                    result.setCdm(new CDMUpdateResult(cdmId, 500, error));
+                    log.error(METHODNAME + error);
+                } else if (cdms.getConceptDeterminationMethod().isEmpty()) {
+                    String error = "cdms.getConceptDeterminationMethod() is empty!";
+                    result.setCdm(new CDMUpdateResult(cdmId, 500, error));
+                    log.error(METHODNAME + error);
+                } else if (cdms.getConceptDeterminationMethod().size() > 1) {
+                    String error = "cdms.getConceptDeterminationMethod() is only allow to have one cdm!";
+                    result.setCdm(new CDMUpdateResult(cdmId, 500, error));
+                    log.error(METHODNAME + error);
+                } else {
+                    ConceptDeterminationMethod cdm = cdms.getConceptDeterminationMethod().get(0);
+                    if (cdm == null) {
+                        String error = "cdm is null!";
+                        result.setCdm(new CDMUpdateResult(cdmId, 500, error));
+                        log.error(METHODNAME + error);
+                    } else {
+                        try {
+                            ConfigUtils.updateConceptDeterminationMethod(cdmId, cdm, configurationService);
+                        } catch (Exception e) {
+                            result.setCdm(new CDMUpdateResult(cdmId, 500, e.getMessage()));
+                            log.error(e);
+                        }
+                    }
+                }
             }
-            if (cdms.getConceptDeterminationMethod().size() > 1) {
-                throw new IllegalStateException("cdms.getConceptDeterminationMethod() is only allow to have one cdm!");
-            }
-            ConceptDeterminationMethod cdm = cdms.getConceptDeterminationMethod().get(0);
-            if (cdm == null) {
-                throw new IllegalStateException("cdm is null!");
-            }
-            ConfigUtils.updateConceptDeterminationMethod(cdmId, cdm, configurationService);
+        } else {
+            log.debug(METHODNAME + "something is null in the updateResponse or cdmUpdate.");
         }
-        for (KMUpdate kmUpdate : updateResponse.getKmUpdates()) {
-            log.debug(METHODNAME + "kmUpdate.getKmId().getScopingEntityId(): " + kmUpdate.getKmId().getScopingEntityId());
-            log.debug(METHODNAME + "kmUpdate.getKmId().getBusinessId(): " + kmUpdate.getKmId().getBusinessId());
-            log.debug(METHODNAME + "kmUpdate.getKmId().getVersion(): " + kmUpdate.getKmId().getVersion());
-            log.debug(METHODNAME + "kmUpdate.getKm() length: " + kmUpdate.getKmPackage().length);
-            KMId kmId = kmUpdate.getKmId();
-            InputStream kmPackageInputStream = new ByteArrayInputStream(kmUpdate.getKmPackage());
-            ConfigUtils.updateKnowledgeModulePackage(kmId, kmPackageInputStream, configurationService);
+
+        if (updateResponse != null
+                && updateResponse.getKmUpdates() != null) {
+            for (KMUpdate kmUpdate : updateResponse.getKmUpdates()) {
+                if (kmUpdate != null
+                        && kmUpdate.getKmId() != null
+                        && kmUpdate.getKmId().getScopingEntityId() != null
+                        && kmUpdate.getKmId().getBusinessId() != null
+                        && kmUpdate.getKmId().getVersion() != null
+                        && kmUpdate.getKmPackage() != null
+                        && kmUpdate.getKmPackage().length > 0) {
+
+                    KMId kmId = kmUpdate.getKmId();
+
+                    log.debug(METHODNAME + "KM scopingEntityId: " + kmId.getScopingEntityId());
+                    log.debug(METHODNAME + "KM businessId: " + kmId.getBusinessId());
+                    log.debug(METHODNAME + "KM version: " + kmId.getVersion());
+                    log.debug(METHODNAME + "KM length: " + kmUpdate.getKmPackage().length);
+
+                    try {
+                        InputStream kmPackageInputStream = new ByteArrayInputStream(kmUpdate.getKmPackage());
+                        ConfigUtils.updateKnowledgeModulePackage(kmId, kmPackageInputStream, configurationService);
+                    } catch (Exception e) {
+                        result.getKms().add(new KMUpdateResult(kmId, 500, e.getMessage()));
+                        log.error(e);
+                    }
+                } else {
+                    log.debug(METHODNAME + "something is null in the kmUpdate.");
+                }
+            }
+        } else {
+            log.debug(METHODNAME + "something is null in the updateResponse or getKmUpdates.");
         }
+        return result;
     }
 
     /**
@@ -86,12 +148,11 @@ public class ConfigUtils {
      * @param knowledgePackage
      * @param configurationService
      */
-    public static void updateKnowledgeModulePackage(KMId kmId, InputStream knowledgePackage, ConfigurationService configurationService) {
+    private static void updateKnowledgeModulePackage(KMId kmId, InputStream knowledgePackage, ConfigurationService configurationService) {
         final String METHODNAME = "updateKmp ";
         boolean created = false;
         if (configurationService.getKnowledgeRepository().getKnowledgeModuleService().find(kmId) == null) {
             created = true;
-            
 
             String defaultCdmCodeSystem = System.getProperty("defaultCdmCodeSystem");
             if (defaultCdmCodeSystem == null || defaultCdmCodeSystem.trim().isEmpty()) {
@@ -178,7 +239,7 @@ public class ConfigUtils {
      * @param cdm
      * @param configurationService
      */
-    public static void updateConceptDeterminationMethod(CDMId cdmId, ConceptDeterminationMethod cdm, ConfigurationService configurationService) {
+    private static void updateConceptDeterminationMethod(CDMId cdmId, ConceptDeterminationMethod cdm, ConfigurationService configurationService) {
         final String METHODNAME = "updateCdm ";
         org.opencds.config.api.model.ConceptDeterminationMethod cdmInternal = ConceptDeterminationMethodMapper.internal(cdm);
         if (!cdmId.equals(cdmInternal.getCDMId())) {

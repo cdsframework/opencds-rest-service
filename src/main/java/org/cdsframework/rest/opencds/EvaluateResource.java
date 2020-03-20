@@ -1,5 +1,8 @@
 package org.cdsframework.rest.opencds;
 
+import org.cdsframework.rest.opencds.utils.MarshalUtils;
+import org.cdsframework.rest.opencds.pojos.UpdateResponse;
+import org.cdsframework.rest.opencds.pojos.PreEvaluateHookType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import java.io.ByteArrayInputStream;
@@ -19,7 +22,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.Invocation;
+import javax.ws.rs.client.Invocation.Builder;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -29,6 +32,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.transform.TransformerException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.cdsframework.rest.opencds.pojos.UpdateResponseResult;
 import org.cdsframework.rest.opencds.utils.ConfigUtils;
 import org.glassfish.jersey.client.ClientConfig;
 import org.omg.dss.DSSRuntimeExceptionFault;
@@ -46,9 +50,6 @@ import org.omg.dss.evaluation.EvaluateResponse;
 import org.omg.dss.evaluation.requestresponse.EvaluationRequest;
 import org.omg.dss.evaluation.requestresponse.EvaluationResponse;
 import org.opencds.config.api.ConfigurationService;
-import org.opencds.config.api.model.CDMId;
-import org.opencds.config.schema.ConceptDeterminationMethod;
-import org.opencds.config.schema.ConceptDeterminationMethods;
 import org.opencds.dss.evaluate.EvaluationService;
 
 /**
@@ -60,6 +61,10 @@ import org.opencds.dss.evaluate.EvaluationService;
 public class EvaluateResource {
 
     private static final Log log = LogFactory.getLog(EvaluateResource.class);
+
+    private static Builder preEvaluateInvocationBuilder;
+    private static Builder preEvaluateFailureInvocationBuilder;
+    private static PreEvaluateHookType preEvaluateHookType = null;
 
     private final EvaluationService evaluationService;
     private final ConfigurationService configurationService;
@@ -252,7 +257,12 @@ public class EvaluateResource {
         }
     }
 
-    private void preEvaluate(EvaluateAtSpecifiedTime evaluateAtSpecifiedTime) throws JAXBException, TransformerException {
+    /**
+     * branch for evaluateAtSpecifiedTime/preEvaluate logic
+     *
+     * @param evaluateAtSpecifiedTime
+     */
+    private void preEvaluate(EvaluateAtSpecifiedTime evaluateAtSpecifiedTime) {
         final String METHODNAME = "preEvaluate ";
         if (evaluateAtSpecifiedTime == null || evaluateAtSpecifiedTime.getEvaluationRequest() == null) {
             log.debug(METHODNAME + "an evaluateAtSpecifiedTime element is null!");
@@ -261,7 +271,12 @@ public class EvaluateResource {
         preEvaluate(evaluateAtSpecifiedTime.getEvaluationRequest());
     }
 
-    private void preEvaluate(Evaluate evaluate) throws JAXBException, TransformerException {
+    /**
+     * branch for evaluate/preEvaluate logic
+     *
+     * @param evaluate
+     */
+    private void preEvaluate(Evaluate evaluate) {
         final String METHODNAME = "preEvaluate ";
         if (evaluate == null || evaluate.getEvaluationRequest() == null) {
             log.debug(METHODNAME + "an evaluate element is null!");
@@ -270,30 +285,71 @@ public class EvaluateResource {
         preEvaluate(evaluate.getEvaluationRequest());
     }
 
-    private void preEvaluate(EvaluationRequest evaluationRequest) throws JAXBException, TransformerException {
+    /**
+     * main preEvaluate webhook logic
+     *
+     * @param evaluationRequest
+     */
+    private void preEvaluate(EvaluationRequest evaluationRequest) {
         final String METHODNAME = "preEvaluate ";
         if (evaluationRequest == null) {
             log.debug(METHODNAME + "evaluationRequest is null!");
             return;
         }
 
+        if (evaluationRequest.getKmEvaluationRequest() == null || evaluationRequest.getKmEvaluationRequest().isEmpty()) {
+            log.debug(METHODNAME + "evaluationRequest.getKmEvaluationRequest() is null or empty!");
+            return;
+        }
+
         long start = System.nanoTime();
         try {
-            String preEvaluateHookTypeProperty = System.getProperty("preEvaluateHookType");
-            if (preEvaluateHookTypeProperty == null || preEvaluateHookTypeProperty.trim().isEmpty()) {
-                preEvaluateHookTypeProperty = "ENTITY_IDENTIFIER";
+            Builder preEvaluateBuilder = getPreEvaluateInvocationBuilder(context);
+            if (preEvaluateBuilder == null) {
+                log.debug(METHODNAME + "builder is null - skipping preEvaluate");
+                return;
             }
-            PreEvaluateHookType preEvaluateHookType = PreEvaluateHookType.valueOf(preEvaluateHookTypeProperty);
-            log.debug(METHODNAME + "preEvaluateHookType: " + preEvaluateHookType);
+            Response response;
+            PreEvaluateHookType hookType = getPreEvaluateHookType();
 
-            if (evaluationRequest.getKmEvaluationRequest() == null || evaluationRequest.getKmEvaluationRequest().isEmpty()) {
-                log.debug(METHODNAME + "evaluationRequest.getKmEvaluationRequest() is null or empty!");
+            switch (hookType) {
+                case ENTITY_IDENTIFIER:
+                    response = preEvaluateBuilder.put(Entity.entity(evaluationRequest.getKmEvaluationRequest(), MediaType.APPLICATION_JSON_TYPE));
+                    UpdateResponse updateResponse = response.readEntity(UpdateResponse.class);
+                    UpdateResponseResult result = ConfigUtils.update(updateResponse, configurationService);
+                    if (result.getCdm() != null || result.getKms().size() > 0) {
+                        Builder failureBuilder = getPreEvaluateFailureInvocationBuilder(context);
+                        response = failureBuilder.put(Entity.entity(result, MediaType.APPLICATION_JSON_TYPE));
+                    }
+                    break;
+                case EVALUATION_REQUEST:
+                    response = preEvaluateBuilder.put(Entity.entity(evaluationRequest, MediaType.APPLICATION_JSON_TYPE));
+                    EvaluationRequest evaluationRequestResponse = response.readEntity(EvaluationRequest.class);
+                    evaluationRequest.getKmEvaluationRequest().clear();
+                    evaluationRequest.getKmEvaluationRequest().addAll(evaluationRequestResponse.getKmEvaluationRequest());
+                    evaluationRequest.getDataRequirementItemData().clear();
+                    evaluationRequest.getDataRequirementItemData().addAll(evaluationRequestResponse.getDataRequirementItemData());
+                    break;
+                default:
+                    throw new IllegalStateException("Unhandled hook type: " + preEvaluateHookType.toString());
             }
+
+            log.debug(METHODNAME + "response.getStatus(): " + response.getStatus());
+
+        } finally {
+            log.info(METHODNAME + "duration: " + ((System.nanoTime() - start) / 1000000) + "ms");
+        }
+    }
+
+    private static Builder getPreEvaluateInvocationBuilder(ServletContext context) {
+        final String METHODNAME = "getPreEvaluateInvocationBuilder ";
+
+        if (preEvaluateInvocationBuilder == null) {
 
             String preEvaluateHookUri = System.getProperty("preEvaluateHookUri");
             if (preEvaluateHookUri == null || preEvaluateHookUri.trim().isEmpty()) {
                 log.debug(METHODNAME + "preEvaluateHookUri is null!");
-                return;
+                return preEvaluateInvocationBuilder;
             } else {
                 log.debug(METHODNAME + "preEvaluateHookUri: " + preEvaluateHookUri);
             }
@@ -301,47 +357,82 @@ public class EvaluateResource {
             String preEvaluateUuid = System.getProperty("preEvaluateUuid");
             if (preEvaluateUuid == null || preEvaluateUuid.trim().isEmpty()) {
                 log.error(METHODNAME + "preEvaluateUuid is null!");
-                return;
+                return preEvaluateInvocationBuilder;
             } else {
                 log.debug(METHODNAME + "preEvaluateUuid: " + preEvaluateUuid);
             }
 
-            boolean isTest = context.getContextPath().toLowerCase().contains("test");
-            log.debug(METHODNAME + "isTest: " + isTest);
+            log.info(METHODNAME + "initializing invocation builder");
 
             ClientConfig config = new ClientConfig();
             config.register(JacksonJsonProvider.class);
             Client client = ClientBuilder.newClient(config);
             WebTarget webTarget = client.target(preEvaluateHookUri);
-            Invocation.Builder invocationBuilder = webTarget.request(MediaType.APPLICATION_JSON);
-            invocationBuilder.header("instanceid", preEvaluateUuid);
-            invocationBuilder.header("environment", isTest ? "TEST" : "PRODUCTION");
-            Response response;
+            preEvaluateInvocationBuilder = webTarget.request(MediaType.APPLICATION_JSON);
 
-            if (null == preEvaluateHookType) {
-                throw new IllegalStateException("preEvaluateHookType is null!");
-            } else {
-                switch (preEvaluateHookType) {
-                    case ENTITY_IDENTIFIER:
-                        response = invocationBuilder.put(Entity.entity(evaluationRequest.getKmEvaluationRequest(), MediaType.APPLICATION_JSON_TYPE));
-                        UpdateResponse updateResponse = response.readEntity(UpdateResponse.class);
-                        ConfigUtils.update(updateResponse, configurationService);
-                        break;
-                    case EVALUATION_REQUEST:
-                        response = invocationBuilder.put(Entity.entity(evaluationRequest, MediaType.APPLICATION_JSON_TYPE));
-                        EvaluationRequest result = response.readEntity(EvaluationRequest.class);
-                        evaluationRequest.getKmEvaluationRequest().clear();
-                        evaluationRequest.getKmEvaluationRequest().addAll(result.getKmEvaluationRequest());
-                        evaluationRequest.getDataRequirementItemData().clear();
-                        evaluationRequest.getDataRequirementItemData().addAll(result.getDataRequirementItemData());
-                        break;
-                    default:
-                        throw new IllegalStateException("Unhandled hook type: " + preEvaluateHookType.toString());
-                }
-            }
-            log.debug(METHODNAME + "response.getStatus(): " + response.getStatus());
-        } finally {
-            log.info(METHODNAME + "duration: " + ((System.nanoTime() - start) / 1000000) + "ms");
+            // set the instanceid
+            preEvaluateInvocationBuilder.header("instanceid", preEvaluateUuid);
+
+            // set the environment
+            boolean isTest = context.getContextPath().toLowerCase().contains("test");
+            log.debug(METHODNAME + "isTest: " + isTest);
+            preEvaluateInvocationBuilder.header("environment", isTest ? "TEST" : "PRODUCTION");
+
         }
+        return preEvaluateInvocationBuilder;
     }
+
+    private static Builder getPreEvaluateFailureInvocationBuilder(ServletContext context) {
+        final String METHODNAME = "getPreEvaluateFailureInvocationBuilder ";
+
+        if (preEvaluateFailureInvocationBuilder == null) {
+
+            String preEvaluateHookUri = System.getProperty("preEvaluateHookUri");
+            if (preEvaluateHookUri == null || preEvaluateHookUri.trim().isEmpty()) {
+                log.debug(METHODNAME + "preEvaluateHookUri is null!");
+                return preEvaluateFailureInvocationBuilder;
+            } else {
+                log.debug(METHODNAME + "preEvaluateHookUri: " + preEvaluateHookUri);
+            }
+
+            String preEvaluateUuid = System.getProperty("preEvaluateUuid");
+            if (preEvaluateUuid == null || preEvaluateUuid.trim().isEmpty()) {
+                log.error(METHODNAME + "preEvaluateUuid is null!");
+                return preEvaluateFailureInvocationBuilder;
+            } else {
+                log.debug(METHODNAME + "preEvaluateUuid: " + preEvaluateUuid);
+            }
+
+            log.info(METHODNAME + "initializing invocation builder");
+
+            ClientConfig config = new ClientConfig();
+            config.register(JacksonJsonProvider.class);
+            Client client = ClientBuilder.newClient(config);
+            WebTarget webTarget = client.target(preEvaluateHookUri);
+            preEvaluateFailureInvocationBuilder = webTarget.path("failed").request(MediaType.APPLICATION_JSON);
+
+            // set the instanceid
+            preEvaluateFailureInvocationBuilder.header("instanceid", preEvaluateUuid);
+
+            // set the environment
+            boolean isTest = context.getContextPath().toLowerCase().contains("test");
+            log.debug(METHODNAME + "isTest: " + isTest);
+            preEvaluateFailureInvocationBuilder.header("environment", isTest ? "TEST" : "PRODUCTION");
+
+        }
+        return preEvaluateFailureInvocationBuilder;
+    }
+
+    private static PreEvaluateHookType getPreEvaluateHookType() {
+        final String METHODNAME = "getPreEvaluateHookType ";
+
+        String preEvaluateHookTypeProperty = System.getProperty("preEvaluateHookType");
+        if (preEvaluateHookTypeProperty == null || preEvaluateHookTypeProperty.trim().isEmpty()) {
+            preEvaluateHookTypeProperty = "ENTITY_IDENTIFIER";
+        }
+        preEvaluateHookType = PreEvaluateHookType.valueOf(preEvaluateHookTypeProperty);
+        log.debug(METHODNAME + "preEvaluateHookType: " + preEvaluateHookType);
+        return preEvaluateHookType;
+    }
+
 }

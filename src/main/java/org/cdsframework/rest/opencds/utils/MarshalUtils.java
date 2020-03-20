@@ -18,7 +18,7 @@
  * For more information about the this software, see https://www.hln.com/services/open-source/ or send
  * correspondence to scm@cdsframework.org.
  */
-package org.cdsframework.rest.opencds;
+package org.cdsframework.rest.opencds.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;

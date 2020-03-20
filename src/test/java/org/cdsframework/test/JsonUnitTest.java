@@ -15,7 +15,7 @@ import java.util.zip.GZIPInputStream;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.TransformerException;
-import org.cdsframework.rest.opencds.MarshalUtils;
+import org.cdsframework.rest.opencds.utils.MarshalUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
