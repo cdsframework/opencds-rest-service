@@ -4,8 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.TransformerException;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.cdsframework.rest.opencds.pojos.CDMUpdateResult;
@@ -69,7 +71,8 @@ public class ConfigUtils {
                         ConceptDeterminationMethods.class
                 );
             } catch (JAXBException | TransformerException e) {
-                result.setCdm(new CDMUpdateResult(cdmId, 500, e.getMessage()));
+                String error = ExceptionUtils.getStackTrace(e);
+                result.setCdm(new CDMUpdateResult(cdmId, 500, error));
                 log.error(e);
             }
 
@@ -96,7 +99,8 @@ public class ConfigUtils {
                         try {
                             ConfigUtils.updateConceptDeterminationMethod(cdmId, cdm, configurationService);
                         } catch (Exception e) {
-                            result.setCdm(new CDMUpdateResult(cdmId, 500, e.getMessage()));
+                            String error = ExceptionUtils.getStackTrace(e);
+                            result.setCdm(new CDMUpdateResult(cdmId, 500, error));
                             log.error(e);
                         }
                     }
@@ -128,7 +132,13 @@ public class ConfigUtils {
                         InputStream kmPackageInputStream = new ByteArrayInputStream(kmUpdate.getKmPackage());
                         ConfigUtils.updateKnowledgeModulePackage(kmId, kmPackageInputStream, configurationService);
                     } catch (Exception e) {
-                        result.getKms().add(new KMUpdateResult(kmId, 500, e.getMessage()));
+                        String error = ExceptionUtils.getStackTrace(e);
+                        List<KMUpdateResult> kms = result.getKms();
+                        if (kms == null) {
+                            kms = new ArrayList<>();
+                            result.setKms(kms);
+                        }
+                        kms.add(new KMUpdateResult(kmId, 500, error));
                         log.error(e);
                     }
                 } else {
@@ -149,7 +159,7 @@ public class ConfigUtils {
      * @param configurationService
      */
     private static void updateKnowledgeModulePackage(KMId kmId, InputStream knowledgePackage, ConfigurationService configurationService) {
-        final String METHODNAME = "updateKmp ";
+        final String METHODNAME = "updateKnowledgeModulePackage ";
         boolean created = false;
         if (configurationService.getKnowledgeRepository().getKnowledgeModuleService().find(kmId) == null) {
             created = true;
@@ -240,7 +250,7 @@ public class ConfigUtils {
      * @param configurationService
      */
     private static void updateConceptDeterminationMethod(CDMId cdmId, ConceptDeterminationMethod cdm, ConfigurationService configurationService) {
-        final String METHODNAME = "updateCdm ";
+        final String METHODNAME = "updateConceptDeterminationMethod ";
         org.opencds.config.api.model.ConceptDeterminationMethod cdmInternal = ConceptDeterminationMethodMapper.internal(cdm);
         if (!cdmId.equals(cdmInternal.getCDMId())) {
             throw new IllegalStateException("CDMId of request and document do not match");

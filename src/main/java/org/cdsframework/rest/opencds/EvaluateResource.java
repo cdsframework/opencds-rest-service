@@ -317,7 +317,7 @@ public class EvaluateResource {
                     response = preEvaluateBuilder.put(Entity.entity(evaluationRequest.getKmEvaluationRequest(), MediaType.APPLICATION_JSON_TYPE));
                     UpdateResponse updateResponse = response.readEntity(UpdateResponse.class);
                     UpdateResponseResult result = ConfigUtils.update(updateResponse, configurationService);
-                    if (result.getCdm() != null || result.getKms().size() > 0) {
+                    if (result.getCdm() != null || (result.getKms() != null && result.getKms().size() > 0)) {
                         Builder failureBuilder = getPreEvaluateFailureInvocationBuilder(context);
                         response = failureBuilder.put(Entity.entity(result, MediaType.APPLICATION_JSON_TYPE));
                     }
