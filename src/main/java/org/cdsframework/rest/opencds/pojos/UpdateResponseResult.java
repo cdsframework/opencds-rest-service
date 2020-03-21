@@ -18,9 +18,6 @@ public class UpdateResponseResult {
      * @return the value of kms
      */
     public List<KMUpdateResult> getKms() {
-        if (kms == null) {
-            kms = new ArrayList<>();
-        }
         return kms;
     }
 
