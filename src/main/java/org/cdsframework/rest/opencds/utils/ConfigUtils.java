@@ -236,7 +236,7 @@ public class ConfigUtils {
                     new ArrayList<PluginId>(),
                     new Date(),
                     "system");
-            configurationService.getKnowledgeRepository().getKnowledgeModuleService().persistKnowledgePackage(kmId, knowledgePackage);
+            configurationService.getKnowledgeRepository().getKnowledgeModuleService().persist(knowledgeModule);
         }
         configurationService.getKnowledgeRepository().getKnowledgeModuleService().persistKnowledgePackage(kmId, knowledgePackage);
         log.info(METHODNAME + (created ? "created: " : "updated: ") + kmId.getScopingEntityId() + " - " + kmId.getBusinessId() + " - " + kmId.getVersion());
