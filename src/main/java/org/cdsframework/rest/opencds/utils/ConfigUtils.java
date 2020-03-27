@@ -2,6 +2,8 @@ package org.cdsframework.rest.opencds.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -128,6 +130,19 @@ public class ConfigUtils {
                     log.debug(METHODNAME + "KM version: " + kmId.getVersion());
                     log.debug(METHODNAME + "KM length: " + kmUpdate.getKmPackage().length);
 
+                    String sha1Hash = "";
+                    MessageDigest md = null;
+                    try {
+                        md = MessageDigest.getInstance("SHA-1");
+                        byte[] digest = md.digest(kmUpdate.getKmPackage());
+                        for (int i = 0; i < digest.length; i++) {
+                            sha1Hash += Integer.toString((digest[i] & 0xff) + 0x100, 16).substring(1);
+                        }
+                    } catch (NoSuchAlgorithmException e) {
+                        e.printStackTrace();
+                    }
+                    log.info("sha1Hash=" + sha1Hash);
+            
                     try {
                         InputStream kmPackageInputStream = new ByteArrayInputStream(kmUpdate.getKmPackage());
                         ConfigUtils.updateKnowledgeModulePackage(kmId, kmPackageInputStream, configurationService);

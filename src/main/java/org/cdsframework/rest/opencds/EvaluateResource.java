@@ -35,6 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import org.cdsframework.rest.opencds.pojos.UpdateResponseResult;
 import org.cdsframework.rest.opencds.utils.ConfigUtils;
 import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientProperties;
 import org.omg.dss.DSSRuntimeExceptionFault;
 import org.omg.dss.EvaluationExceptionFault;
 import org.omg.dss.InvalidDriDataFormatExceptionFault;
@@ -65,6 +66,7 @@ public class EvaluateResource {
     private static Builder preEvaluateInvocationBuilder;
     private static Builder preEvaluateFailureInvocationBuilder;
     private static PreEvaluateHookType preEvaluateHookType = null;
+    private static int DEFAULT_CLIENT_TIMEOUT = 5000;
 
     private final EvaluationService evaluationService;
     private final ConfigurationService configurationService;
@@ -403,11 +405,28 @@ public class EvaluateResource {
                 log.debug(METHODNAME + "preEvaluateUuid: " + preEvaluateUuid);
             }
 
+            String preEvaluateTimeoutString = System.getProperty("preEvaluateTimeout");
+            int preEvaluateTimeout;
+            if (preEvaluateTimeoutString == null || preEvaluateTimeoutString.trim().isEmpty()) {
+                log.debug(METHODNAME + "preEvaluateTimeoutString is null!");
+                preEvaluateTimeout = DEFAULT_CLIENT_TIMEOUT;
+            } else {
+                try {
+                    preEvaluateTimeout = Integer.parseInt(preEvaluateTimeoutString);
+                } catch (Exception e) {
+                    preEvaluateTimeout = DEFAULT_CLIENT_TIMEOUT;
+                }
+            }
+            log.debug(METHODNAME + "preEvaluateTimeout: " + preEvaluateTimeout);
+
             log.info(METHODNAME + "initializing invocation builder");
 
             ClientConfig config = new ClientConfig();
             config.register(JacksonJsonProvider.class);
             Client client = ClientBuilder.newClient(config);
+            client.property(ClientProperties.CONNECT_TIMEOUT, preEvaluateTimeout);
+            client.property(ClientProperties.READ_TIMEOUT,    preEvaluateTimeout);
+
             WebTarget webTarget = client.target(preEvaluateHookUri);
             preEvaluateFailureInvocationBuilder = webTarget.path("failed").request(MediaType.APPLICATION_JSON);
 
