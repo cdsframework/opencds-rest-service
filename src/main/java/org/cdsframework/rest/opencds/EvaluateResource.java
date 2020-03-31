@@ -86,7 +86,7 @@ public class EvaluateResource {
     }
 
     @GET
-    @Produces({MediaType.TEXT_PLAIN})
+    @Produces({ MediaType.TEXT_PLAIN })
     @Path("tz")
     public String tz() {
         return TimeZone.getDefault().getID();
@@ -115,8 +115,8 @@ public class EvaluateResource {
      * @throws TransformerException
      */
     @POST
-    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
     @Path("evaluate")
     public Response evaluate(String evaluateString, @Context HttpHeaders header, @Context HttpServletResponse response)
             throws ParseException, UnsupportedEncodingException, IOException, InvalidDriDataFormatExceptionFault,
@@ -196,8 +196,8 @@ public class EvaluateResource {
      * @throws javax.xml.transform.TransformerException
      */
     @POST
-    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
+    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
     @Path("evaluateAtSpecifiedTime")
     public Response evaluateAtSpecifiedTime(String evaluateAtSpecifiedTimeString, @Context HttpHeaders header,
             @Context HttpServletResponse response)
@@ -223,11 +223,13 @@ public class EvaluateResource {
 
         switch (mediaType.toString()) {
             case MediaType.APPLICATION_JSON:
-                evaluateAtSpecifiedTime = mapper.readValue(evaluateAtSpecifiedTimeString, EvaluateAtSpecifiedTime.class);
+                evaluateAtSpecifiedTime = mapper.readValue(evaluateAtSpecifiedTimeString,
+                        EvaluateAtSpecifiedTime.class);
                 break;
             case MediaType.APPLICATION_XML:
                 evaluateAtSpecifiedTime = MarshalUtils.unmarshal(
-                        new ByteArrayInputStream(evaluateAtSpecifiedTimeString.getBytes()), EvaluateAtSpecifiedTime.class);
+                        new ByteArrayInputStream(evaluateAtSpecifiedTimeString.getBytes()),
+                        EvaluateAtSpecifiedTime.class);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported media type: " + mediaType);
@@ -299,7 +301,8 @@ public class EvaluateResource {
             return;
         }
 
-        if (evaluationRequest.getKmEvaluationRequest() == null || evaluationRequest.getKmEvaluationRequest().isEmpty()) {
+        if (evaluationRequest.getKmEvaluationRequest() == null
+                || evaluationRequest.getKmEvaluationRequest().isEmpty()) {
             log.debug(METHODNAME + "evaluationRequest.getKmEvaluationRequest() is null or empty!");
             return;
         }
@@ -316,7 +319,8 @@ public class EvaluateResource {
 
             switch (hookType) {
                 case ENTITY_IDENTIFIER:
-                    response = preEvaluateBuilder.put(Entity.entity(evaluationRequest.getKmEvaluationRequest(), MediaType.APPLICATION_JSON_TYPE));
+                    response = preEvaluateBuilder.put(
+                            Entity.entity(evaluationRequest.getKmEvaluationRequest(), MediaType.APPLICATION_JSON_TYPE));
                     UpdateResponse updateResponse = response.readEntity(UpdateResponse.class);
                     UpdateResponseResult result = ConfigUtils.update(updateResponse, configurationService);
                     if (result.getCdm() != null || (result.getKms() != null && result.getKms().size() > 0)) {
@@ -325,12 +329,15 @@ public class EvaluateResource {
                     }
                     break;
                 case EVALUATION_REQUEST:
-                    response = preEvaluateBuilder.put(Entity.entity(evaluationRequest, MediaType.APPLICATION_JSON_TYPE));
+                    response = preEvaluateBuilder
+                            .put(Entity.entity(evaluationRequest, MediaType.APPLICATION_JSON_TYPE));
                     EvaluationRequest evaluationRequestResponse = response.readEntity(EvaluationRequest.class);
                     evaluationRequest.getKmEvaluationRequest().clear();
-                    evaluationRequest.getKmEvaluationRequest().addAll(evaluationRequestResponse.getKmEvaluationRequest());
+                    evaluationRequest.getKmEvaluationRequest()
+                            .addAll(evaluationRequestResponse.getKmEvaluationRequest());
                     evaluationRequest.getDataRequirementItemData().clear();
-                    evaluationRequest.getDataRequirementItemData().addAll(evaluationRequestResponse.getDataRequirementItemData());
+                    evaluationRequest.getDataRequirementItemData()
+                            .addAll(evaluationRequestResponse.getDataRequirementItemData());
                     break;
                 default:
                     throw new IllegalStateException("Unhandled hook type: " + preEvaluateHookType.toString());
@@ -425,7 +432,7 @@ public class EvaluateResource {
             config.register(JacksonJsonProvider.class);
             Client client = ClientBuilder.newClient(config);
             client.property(ClientProperties.CONNECT_TIMEOUT, preEvaluateTimeout);
-            client.property(ClientProperties.READ_TIMEOUT,    preEvaluateTimeout);
+            client.property(ClientProperties.READ_TIMEOUT, preEvaluateTimeout);
 
             WebTarget webTarget = client.target(preEvaluateHookUri);
             preEvaluateFailureInvocationBuilder = webTarget.path("failed").request(MediaType.APPLICATION_JSON);
