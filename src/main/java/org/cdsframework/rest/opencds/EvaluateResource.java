@@ -58,7 +58,6 @@ import org.omg.dss.evaluation.requestresponse.KMEvaluationRequest;
 import org.opencds.config.api.ConfigurationService;
 import org.opencds.config.api.model.CDMId;
 import org.opencds.config.api.model.KMId;
-import org.opencds.config.api.model.impl.CDMIdImpl;
 import org.opencds.dss.evaluate.EvaluationService;
 
 /**
