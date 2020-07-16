@@ -22,6 +22,7 @@ import org.opencds.config.api.model.CDMId;
 import org.opencds.config.api.model.KMId;
 import org.opencds.config.api.model.KMStatus;
 import org.opencds.config.api.model.PluginId;
+import org.opencds.config.api.model.SSId;
 import org.opencds.config.api.model.SecondaryCDM;
 import org.opencds.config.api.model.TraitId;
 import org.opencds.config.api.model.impl.CDMIdImpl;
@@ -40,25 +41,54 @@ public class ConfigUtils {
     private static final Log log = LogFactory.getLog(ConfigUtils.class);
 
     /**
+     * Does a CDM exist.
+     * 
+     * @param cdmId
+     * @param configurationService
+     * @return
+     */
+    public static boolean isCdmExists(final CDMId cdmId, final ConfigurationService configurationService) {
+        boolean result = false;
+        if (configurationService.getKnowledgeRepository().getConceptDeterminationMethodService().find(cdmId) != null) {
+            result = true;
+        }
+        return result;
+    }
+
+    /**
+     * Does a KM exist.
+     * 
+     * @param kmId
+     * @param configurationService
+     * @return
+     */
+    public static boolean isKmExists(final KMId kmId, final ConfigurationService configurationService) {
+        boolean result = false;
+        if (configurationService.getKnowledgeRepository().getKnowledgeModuleService().find(kmId) != null) {
+            result = true;
+        }
+        return result;
+    }
+
+    /**
      * Processes a cdm and km update.
      *
      * @param updateResponse
      * @param configurationService
      * @return result
      */
-    public static UpdateResponseResult update(UpdateResponse updateResponse, ConfigurationService configurationService) {
+    public static UpdateResponseResult update(final UpdateResponse updateResponse,
+            final ConfigurationService configurationService, final String environment, final String instanceId) {
         final String METHODNAME = "update ";
-        UpdateResponseResult result = new UpdateResponseResult();
-        if (updateResponse != null
-                && updateResponse.getCdmUpdate() != null
-                && updateResponse.getCdmUpdate().getCdm() != null
-                && updateResponse.getCdmUpdate().getCdm().length > 0
+        final UpdateResponseResult result = new UpdateResponseResult();
+        if (updateResponse != null && updateResponse.getCdmUpdate() != null
+                && updateResponse.getCdmUpdate().getCdm() != null && updateResponse.getCdmUpdate().getCdm().length > 0
                 && updateResponse.getCdmUpdate().getCdmId() != null
                 && updateResponse.getCdmUpdate().getCdmId().getCode() != null
                 && updateResponse.getCdmUpdate().getCdmId().getCodeSystem() != null
                 && updateResponse.getCdmUpdate().getCdmId().getVersion() != null) {
 
-            CDMId cdmId = updateResponse.getCdmUpdate().getCdmId();
+            final CDMId cdmId = updateResponse.getCdmUpdate().getCdmId();
 
             log.debug(METHODNAME + "CDM code: " + cdmId.getCode());
             log.debug(METHODNAME + "CDM codeSystem: " + cdmId.getCodeSystem());
@@ -68,41 +98,39 @@ public class ConfigUtils {
             ConceptDeterminationMethods cdms = null;
 
             try {
-                cdms = MarshalUtils.unmarshal(
-                        new ByteArrayInputStream(updateResponse.getCdmUpdate().getCdm()),
-                        ConceptDeterminationMethods.class
-                );
+                cdms = MarshalUtils.unmarshal(new ByteArrayInputStream(updateResponse.getCdmUpdate().getCdm()),
+                        ConceptDeterminationMethods.class);
             } catch (JAXBException | TransformerException e) {
-                String error = ExceptionUtils.getStackTrace(e);
-                result.setCdm(new CDMUpdateResult(cdmId, 500, error));
+                final String error = ExceptionUtils.getStackTrace(e);
+                result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
                 log.error(e);
             }
 
             if (cdms != null) {
                 if (cdms.getConceptDeterminationMethod() == null) {
-                    String error = "cdms.getConceptDeterminationMethod() is null!";
-                    result.setCdm(new CDMUpdateResult(cdmId, 500, error));
+                    final String error = "cdms.getConceptDeterminationMethod() is null!";
+                    result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
                     log.error(METHODNAME + error);
                 } else if (cdms.getConceptDeterminationMethod().isEmpty()) {
-                    String error = "cdms.getConceptDeterminationMethod() is empty!";
-                    result.setCdm(new CDMUpdateResult(cdmId, 500, error));
+                    final String error = "cdms.getConceptDeterminationMethod() is empty!";
+                    result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
                     log.error(METHODNAME + error);
                 } else if (cdms.getConceptDeterminationMethod().size() > 1) {
-                    String error = "cdms.getConceptDeterminationMethod() is only allow to have one cdm!";
-                    result.setCdm(new CDMUpdateResult(cdmId, 500, error));
+                    final String error = "cdms.getConceptDeterminationMethod() is only allow to have one cdm!";
+                    result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
                     log.error(METHODNAME + error);
                 } else {
-                    ConceptDeterminationMethod cdm = cdms.getConceptDeterminationMethod().get(0);
+                    final ConceptDeterminationMethod cdm = cdms.getConceptDeterminationMethod().get(0);
                     if (cdm == null) {
-                        String error = "cdm is null!";
-                        result.setCdm(new CDMUpdateResult(cdmId, 500, error));
+                        final String error = "cdm is null!";
+                        result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
                         log.error(METHODNAME + error);
                     } else {
                         try {
                             ConfigUtils.updateConceptDeterminationMethod(cdmId, cdm, configurationService);
-                        } catch (Exception e) {
-                            String error = ExceptionUtils.getStackTrace(e);
-                            result.setCdm(new CDMUpdateResult(cdmId, 500, error));
+                        } catch (final Exception e) {
+                            final String error = ExceptionUtils.getStackTrace(e);
+                            result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
                             log.error(e);
                         }
                     }
@@ -112,18 +140,13 @@ public class ConfigUtils {
             log.debug(METHODNAME + "something is null in the updateResponse or cdmUpdate.");
         }
 
-        if (updateResponse != null
-                && updateResponse.getKmUpdates() != null) {
-            for (KMUpdate kmUpdate : updateResponse.getKmUpdates()) {
-                if (kmUpdate != null
-                        && kmUpdate.getKmId() != null
-                        && kmUpdate.getKmId().getScopingEntityId() != null
-                        && kmUpdate.getKmId().getBusinessId() != null
-                        && kmUpdate.getKmId().getVersion() != null
-                        && kmUpdate.getKmPackage() != null
-                        && kmUpdate.getKmPackage().length > 0) {
+        if (updateResponse != null && updateResponse.getKmUpdates() != null) {
+            for (final KMUpdate kmUpdate : updateResponse.getKmUpdates()) {
+                if (kmUpdate != null && kmUpdate.getKmId() != null && kmUpdate.getKmId().getScopingEntityId() != null
+                        && kmUpdate.getKmId().getBusinessId() != null && kmUpdate.getKmId().getVersion() != null
+                        && kmUpdate.getKmPackage() != null && kmUpdate.getKmPackage().length > 0) {
 
-                    KMId kmId = kmUpdate.getKmId();
+                    final KMId kmId = kmUpdate.getKmId();
 
                     log.debug(METHODNAME + "KM scopingEntityId: " + kmId.getScopingEntityId());
                     log.debug(METHODNAME + "KM businessId: " + kmId.getBusinessId());
@@ -134,26 +157,26 @@ public class ConfigUtils {
                     MessageDigest md = null;
                     try {
                         md = MessageDigest.getInstance("SHA-1");
-                        byte[] digest = md.digest(kmUpdate.getKmPackage());
+                        final byte[] digest = md.digest(kmUpdate.getKmPackage());
                         for (int i = 0; i < digest.length; i++) {
                             sha1Hash += Integer.toString((digest[i] & 0xff) + 0x100, 16).substring(1);
                         }
-                    } catch (NoSuchAlgorithmException e) {
+                    } catch (final NoSuchAlgorithmException e) {
                         e.printStackTrace();
                     }
                     log.info("sha1Hash=" + sha1Hash);
-            
+
                     try {
-                        InputStream kmPackageInputStream = new ByteArrayInputStream(kmUpdate.getKmPackage());
+                        final InputStream kmPackageInputStream = new ByteArrayInputStream(kmUpdate.getKmPackage());
                         ConfigUtils.updateKnowledgeModulePackage(kmId, kmPackageInputStream, configurationService);
-                    } catch (Exception e) {
-                        String error = ExceptionUtils.getStackTrace(e);
+                    } catch (final Exception e) {
+                        final String error = ExceptionUtils.getStackTrace(e);
                         List<KMUpdateResult> kms = result.getKms();
                         if (kms == null) {
                             kms = new ArrayList<>();
                             result.setKms(kms);
                         }
-                        kms.add(new KMUpdateResult(kmId, 500, error));
+                        kms.add(new KMUpdateResult(kmId, 500, error, environment, instanceId));
                         log.error(e);
                     }
                 } else {
@@ -173,88 +196,40 @@ public class ConfigUtils {
      * @param knowledgePackage
      * @param configurationService
      */
-    private static void updateKnowledgeModulePackage(KMId kmId, InputStream knowledgePackage, ConfigurationService configurationService) {
+    private static void updateKnowledgeModulePackage(final KMId kmId, final InputStream knowledgePackage,
+            final ConfigurationService configurationService) {
         final String METHODNAME = "updateKnowledgeModulePackage ";
-        boolean created = false;
-        if (configurationService.getKnowledgeRepository().getKnowledgeModuleService().find(kmId) == null) {
-            created = true;
+        final boolean create = !isKmExists(kmId, configurationService);
+        if (create) {
 
-            String defaultCdmCodeSystem = System.getProperty("defaultCdmCodeSystem");
-            if (defaultCdmCodeSystem == null || defaultCdmCodeSystem.trim().isEmpty()) {
-                throw new IllegalStateException(METHODNAME + "defaultCdmCodeSystem is null!");
-            } else {
-                log.debug(METHODNAME + "defaultCdmCodeSystem: " + defaultCdmCodeSystem);
-            }
+            final CDMId defaultCdmId = getDefaultCdmId();
+            final SSId defaultSsId = getDefaultSsId();
 
-            String defaultCdmCode = System.getProperty("defaultCdmCode");
-            if (defaultCdmCode == null || defaultCdmCode.trim().isEmpty()) {
-                throw new IllegalStateException(METHODNAME + "defaultCdmCode is null!");
-            } else {
-                log.debug(METHODNAME + "defaultCdmCode: " + defaultCdmCode);
-            }
-
-            String defaultCdmVersion = System.getProperty("defaultCdmVersion");
-            if (defaultCdmVersion == null || defaultCdmVersion.trim().isEmpty()) {
-                throw new IllegalStateException(METHODNAME + "defaultCdmVersion is null!");
-            } else {
-                log.debug(METHODNAME + "defaultCdmVersion: " + defaultCdmVersion);
-            }
-
-            String defaultCdmExecutionEngine = System.getProperty("defaultCdmExecutionEngine");
+            final String defaultCdmExecutionEngine = System.getProperty("defaultCdmExecutionEngine");
             if (defaultCdmExecutionEngine == null || defaultCdmExecutionEngine.trim().isEmpty()) {
                 throw new IllegalStateException(METHODNAME + "defaultCdmExecutionEngine is null!");
             } else {
                 log.debug(METHODNAME + "defaultCdmExecutionEngine: " + defaultCdmExecutionEngine);
             }
 
-            String defaultSsidScopingEntityId = System.getProperty("defaultSsidScopingEntityId");
-            if (defaultSsidScopingEntityId == null || defaultSsidScopingEntityId.trim().isEmpty()) {
-                throw new IllegalStateException(METHODNAME + "defaultSsidScopingEntityId is null!");
-            } else {
-                log.debug(METHODNAME + "defaultSsidScopingEntityId: " + defaultSsidScopingEntityId);
-            }
-
-            String defaultSsidBusinessId = System.getProperty("defaultSsidBusinessId");
-            if (defaultSsidBusinessId == null || defaultSsidBusinessId.trim().isEmpty()) {
-                throw new IllegalStateException(METHODNAME + "defaultSsidBusinessId is null!");
-            } else {
-                log.debug(METHODNAME + "defaultSsidBusinessId: " + defaultSsidBusinessId);
-            }
-
-            String defaultSsidVersion = System.getProperty("defaultSsidVersion");
-            if (defaultSsidVersion == null || defaultSsidVersion.trim().isEmpty()) {
-                throw new IllegalStateException(METHODNAME + "defaultSsidVersion is null!");
-            } else {
-                log.debug(METHODNAME + "defaultSsidVersion: " + defaultSsidVersion);
-            }
-
-            String defaultPrimaryProcess = System.getProperty("defaultPrimaryProcess");
+            final String defaultPrimaryProcess = System.getProperty("defaultPrimaryProcess");
             if (defaultPrimaryProcess == null || defaultPrimaryProcess.trim().isEmpty()) {
                 throw new IllegalStateException(METHODNAME + "defaultPrimaryProcess is null!");
             } else {
                 log.debug(METHODNAME + "defaultPrimaryProcess: " + defaultPrimaryProcess);
             }
 
-            KnowledgeModuleImpl knowledgeModule = KnowledgeModuleImpl.create(
-                    kmId,
-                    KMStatus.APPROVED,
-                    defaultCdmExecutionEngine,
-                    SSIdImpl.create(defaultSsidScopingEntityId, defaultSsidBusinessId, defaultSsidVersion),
-                    CDMIdImpl.create(defaultCdmCodeSystem, defaultCdmCode, defaultCdmVersion),
-                    new ArrayList<SecondaryCDM>(),
-                    "PKG",
-                    kmId.getScopingEntityId() + "^" + kmId.getBusinessId() + "^" + kmId.getVersion() + ".pkg",
-                    true,
-                    defaultPrimaryProcess,
-                    new ArrayList<TraitId>(),
-                    new ArrayList<PluginId>(),
-                    new ArrayList<PluginId>(),
-                    new Date(),
-                    "system");
+            final KnowledgeModuleImpl knowledgeModule = KnowledgeModuleImpl.create(kmId, KMStatus.APPROVED,
+                    defaultCdmExecutionEngine, defaultSsId, defaultCdmId, new ArrayList<SecondaryCDM>(), "PKG",
+                    kmId.getScopingEntityId() + "^" + kmId.getBusinessId() + "^" + kmId.getVersion() + ".pkg", true,
+                    defaultPrimaryProcess, new ArrayList<TraitId>(), new ArrayList<PluginId>(),
+                    new ArrayList<PluginId>(), new Date(), "system");
             configurationService.getKnowledgeRepository().getKnowledgeModuleService().persist(knowledgeModule);
         }
-        configurationService.getKnowledgeRepository().getKnowledgeModuleService().persistKnowledgePackage(kmId, knowledgePackage);
-        log.info(METHODNAME + (created ? "created: " : "updated: ") + kmId.getScopingEntityId() + " - " + kmId.getBusinessId() + " - " + kmId.getVersion());
+        configurationService.getKnowledgeRepository().getKnowledgeModuleService().persistKnowledgePackage(kmId,
+                knowledgePackage);
+        log.info(METHODNAME + (create ? "created: " : "updated: ") + kmId.getScopingEntityId() + " - "
+                + kmId.getBusinessId() + " - " + kmId.getVersion());
     }
 
     /**
@@ -264,18 +239,64 @@ public class ConfigUtils {
      * @param cdm
      * @param configurationService
      */
-    private static void updateConceptDeterminationMethod(CDMId cdmId, ConceptDeterminationMethod cdm, ConfigurationService configurationService) {
+    private static void updateConceptDeterminationMethod(final CDMId cdmId, final ConceptDeterminationMethod cdm,
+            final ConfigurationService configurationService) {
         final String METHODNAME = "updateConceptDeterminationMethod ";
-        org.opencds.config.api.model.ConceptDeterminationMethod cdmInternal = ConceptDeterminationMethodMapper.internal(cdm);
+        final org.opencds.config.api.model.ConceptDeterminationMethod cdmInternal = ConceptDeterminationMethodMapper
+                .internal(cdm);
         if (!cdmId.equals(cdmInternal.getCDMId())) {
             throw new IllegalStateException("CDMId of request and document do not match");
         }
-        boolean created = false;
-        if (configurationService.getKnowledgeRepository().getConceptDeterminationMethodService().find(cdmInternal.getCDMId()) == null) {
-            created = true;
-        }
+        final boolean created = !isCdmExists(cdmId, configurationService);
         configurationService.getKnowledgeRepository().getConceptDeterminationMethodService().persist(cdmInternal);
-        log.info(METHODNAME + (created ? "created: " : "updated: ") + cdmId.getCodeSystem() + " - " + cdmId.getCodeSystem() + " - " + cdmId.getVersion());
+        log.info(METHODNAME + (created ? "created: " : "updated: ") + cdmId.getCodeSystem() + " - "
+                + cdmId.getCodeSystem() + " - " + cdmId.getVersion());
+    }
+
+    public static CDMId getDefaultCdmId() {
+        final String METHODNAME = "getDefaultCdmId ";
+
+        String defaultCdmCode = System.getProperty("defaultCdmCode");
+        if (defaultCdmCode == null || defaultCdmCode.trim().isEmpty()) {
+            throw new IllegalStateException(METHODNAME + "defaultCdmCode is null!");
+        }
+        String defaultCdmCodeSystem = System.getProperty("defaultCdmCodeSystem");
+        if (defaultCdmCodeSystem == null || defaultCdmCodeSystem.trim().isEmpty()) {
+            throw new IllegalStateException(METHODNAME + "defaultCdmCodeSystem is null!");
+        }
+        String defaultCdmVersion = System.getProperty("defaultCdmVersion");
+        if (defaultCdmVersion == null || defaultCdmVersion.trim().isEmpty()) {
+            throw new IllegalStateException(METHODNAME + "defaultCdmVersion is null!");
+        }
+
+        return CDMIdImpl.create(defaultCdmCodeSystem, defaultCdmCode, defaultCdmVersion);
+    }
+
+    public static SSId getDefaultSsId() {
+        final String METHODNAME = "getDefaultSsId ";
+
+        final String defaultSsidScopingEntityId = System.getProperty("defaultSsidScopingEntityId");
+        if (defaultSsidScopingEntityId == null || defaultSsidScopingEntityId.trim().isEmpty()) {
+            throw new IllegalStateException(METHODNAME + "defaultSsidScopingEntityId is null!");
+        } else {
+            log.debug(METHODNAME + "defaultSsidScopingEntityId: " + defaultSsidScopingEntityId);
+        }
+
+        final String defaultSsidBusinessId = System.getProperty("defaultSsidBusinessId");
+        if (defaultSsidBusinessId == null || defaultSsidBusinessId.trim().isEmpty()) {
+            throw new IllegalStateException(METHODNAME + "defaultSsidBusinessId is null!");
+        } else {
+            log.debug(METHODNAME + "defaultSsidBusinessId: " + defaultSsidBusinessId);
+        }
+
+        final String defaultSsidVersion = System.getProperty("defaultSsidVersion");
+        if (defaultSsidVersion == null || defaultSsidVersion.trim().isEmpty()) {
+            throw new IllegalStateException(METHODNAME + "defaultSsidVersion is null!");
+        } else {
+            log.debug(METHODNAME + "defaultSsidVersion: " + defaultSsidVersion);
+        }
+
+        return SSIdImpl.create(defaultSsidScopingEntityId, defaultSsidBusinessId, defaultSsidVersion);
     }
 
 }

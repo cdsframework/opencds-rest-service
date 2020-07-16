@@ -1,6 +1,5 @@
 package org.cdsframework.rest.opencds.pojos;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,7 +25,7 @@ public class UpdateResponseResult {
      *
      * @param kms new value of kms
      */
-    public void setKms(List<KMUpdateResult> kms) {
+    public void setKms(final List<KMUpdateResult> kms) {
         this.kms = kms;
     }
 
@@ -44,7 +43,7 @@ public class UpdateResponseResult {
      *
      * @param cdm new value of cdm
      */
-    public void setCdm(CDMUpdateResult cdm) {
+    public void setCdm(final CDMUpdateResult cdm) {
         this.cdm = cdm;
     }
 

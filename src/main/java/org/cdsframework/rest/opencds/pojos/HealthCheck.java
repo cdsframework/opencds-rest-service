@@ -9,7 +9,7 @@ public class HealthCheck {
     private Integer status;
     private String message;
 
-    public HealthCheck(Integer status, String message) {
+    public HealthCheck(final Integer status, final String message) {
         this.status = status;
         this.message = message;
     }
@@ -28,7 +28,7 @@ public class HealthCheck {
      *
      * @param message new value of message
      */
-    public void setMessage(String message) {
+    public void setMessage(final String message) {
         this.message = message;
     }
 
@@ -46,7 +46,7 @@ public class HealthCheck {
      *
      * @param status new value of status
      */
-    public void setStatus(Integer status) {
+    public void setStatus(final Integer status) {
         this.status = status;
     }
 

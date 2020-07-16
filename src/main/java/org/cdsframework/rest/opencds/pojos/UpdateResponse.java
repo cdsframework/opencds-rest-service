@@ -25,7 +25,7 @@ public class UpdateResponse {
      *
      * @param kmUpdates new value of kmUpdates
      */
-    public void setKmUpdates(List<KMUpdate> kmUpdates) {
+    public void setKmUpdates(final List<KMUpdate> kmUpdates) {
         this.kmUpdates = kmUpdates;
     }
 
@@ -43,7 +43,7 @@ public class UpdateResponse {
      *
      * @param cdmUpdate new value of cdmUpdate
      */
-    public void setCdmUpdate(CDMUpdate cdmUpdate) {
+    public void setCdmUpdate(final CDMUpdate cdmUpdate) {
         this.cdmUpdate = cdmUpdate;
     }
 

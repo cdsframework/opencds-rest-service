@@ -8,13 +8,14 @@ import org.opencds.config.api.model.impl.KMIdImpl;
  * @author sdn
  */
 public class KMUpdateResult {
-    
+
     private KMIdImpl kmId;
     private UpdateError error;
-    
-    public KMUpdateResult(KMId kmId, Integer status, String message) {
+
+    public KMUpdateResult(final KMId kmId, final Integer status, final String message, final String environment,
+            final String instanceId) {
         this.kmId = KMIdImpl.create(kmId);
-        this.error = new UpdateError(status, message);
+        this.error = new UpdateError(status, message, environment, instanceId);
     }
 
     /**
@@ -31,7 +32,7 @@ public class KMUpdateResult {
      *
      * @param kmId new value of kmId
      */
-    public void setKmId(KMIdImpl kmId) {
+    public void setKmId(final KMIdImpl kmId) {
         this.kmId = kmId;
     }
 
@@ -49,8 +50,8 @@ public class KMUpdateResult {
      *
      * @param error new value of error
      */
-    public void setError(UpdateError error) {
+    public void setError(final UpdateError error) {
         this.error = error;
     }
-    
+
 }

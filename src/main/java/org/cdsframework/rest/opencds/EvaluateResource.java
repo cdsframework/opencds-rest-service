@@ -2,7 +2,11 @@ package org.cdsframework.rest.opencds;
 
 import org.cdsframework.rest.opencds.utils.MarshalUtils;
 import org.cdsframework.rest.opencds.pojos.UpdateResponse;
+import org.cdsframework.rest.opencds.pojos.CdmIdCheck;
+import org.cdsframework.rest.opencds.pojos.KmIdCheck;
 import org.cdsframework.rest.opencds.pojos.PreEvaluateHookType;
+import org.cdsframework.rest.opencds.pojos.UpdateCheck;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import java.io.ByteArrayInputStream;
@@ -50,7 +54,11 @@ import org.omg.dss.evaluation.EvaluateAtSpecifiedTimeResponse;
 import org.omg.dss.evaluation.EvaluateResponse;
 import org.omg.dss.evaluation.requestresponse.EvaluationRequest;
 import org.omg.dss.evaluation.requestresponse.EvaluationResponse;
+import org.omg.dss.evaluation.requestresponse.KMEvaluationRequest;
 import org.opencds.config.api.ConfigurationService;
+import org.opencds.config.api.model.CDMId;
+import org.opencds.config.api.model.KMId;
+import org.opencds.config.api.model.impl.CDMIdImpl;
 import org.opencds.dss.evaluate.EvaluationService;
 
 /**
@@ -80,7 +88,8 @@ public class EvaluateResource {
      * @param evaluationService
      * @param configurationService
      */
-    public EvaluateResource(EvaluationService evaluationService, ConfigurationService configurationService) {
+    public EvaluateResource(final EvaluationService evaluationService,
+            final ConfigurationService configurationService) {
         this.evaluationService = evaluationService;
         this.configurationService = configurationService;
     }
@@ -118,7 +127,8 @@ public class EvaluateResource {
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
     @Path("evaluate")
-    public Response evaluate(String evaluateString, @Context HttpHeaders header, @Context HttpServletResponse response)
+    public Response evaluate(final String evaluateString, @Context final HttpHeaders header,
+            @Context final HttpServletResponse response)
             throws ParseException, UnsupportedEncodingException, IOException, InvalidDriDataFormatExceptionFault,
             UnrecognizedLanguageExceptionFault, RequiredDataNotProvidedExceptionFault,
             UnsupportedLanguageExceptionFault, UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
@@ -126,10 +136,10 @@ public class EvaluateResource {
 
         final String METHODNAME = "evaluate ";
 
-        ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = new ObjectMapper();
 
         Evaluate evaluate;
-        MediaType mediaType = header.getMediaType();
+        final MediaType mediaType = header.getMediaType();
 
         log.debug(METHODNAME + "mediaType=" + mediaType);
         log.debug(METHODNAME + "mediaType.toString()=" + mediaType.toString());
@@ -153,17 +163,17 @@ public class EvaluateResource {
         try {
             preEvaluate(evaluate);
             Response.ResponseBuilder responseBuilder;
-            EvaluateResponse evaluateResponse = evaluationService.evaluate(evaluate);
-            EvaluationResponse evaluationResponse = evaluateResponse.getEvaluationResponse();
+            final EvaluateResponse evaluateResponse = evaluationService.evaluate(evaluate);
+            final EvaluationResponse evaluationResponse = evaluateResponse.getEvaluationResponse();
 
-            List<MediaType> acceptableMediaTypes = header.getAcceptableMediaTypes();
+            final List<MediaType> acceptableMediaTypes = header.getAcceptableMediaTypes();
             log.debug(METHODNAME + "acceptableMediaTypes=" + acceptableMediaTypes);
 
             if (acceptableMediaTypes.contains(MediaType.APPLICATION_JSON_TYPE)) {
-                String data = mapper.writeValueAsString(evaluationResponse);
+                final String data = mapper.writeValueAsString(evaluationResponse);
                 responseBuilder = Response.ok(data).type(MediaType.APPLICATION_JSON);
             } else {
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                final ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 MarshalUtils.marshal(evaluationResponse, stream);
                 stream.toByteArray();
                 responseBuilder = Response.ok(new String(stream.toByteArray())).type(MediaType.APPLICATION_XML);
@@ -199,8 +209,8 @@ public class EvaluateResource {
     @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
     @Path("evaluateAtSpecifiedTime")
-    public Response evaluateAtSpecifiedTime(String evaluateAtSpecifiedTimeString, @Context HttpHeaders header,
-            @Context HttpServletResponse response)
+    public Response evaluateAtSpecifiedTime(final String evaluateAtSpecifiedTimeString,
+            @Context final HttpHeaders header, @Context final HttpServletResponse response)
             throws ParseException, UnsupportedEncodingException, IOException, InvalidDriDataFormatExceptionFault,
             UnrecognizedLanguageExceptionFault, RequiredDataNotProvidedExceptionFault,
             UnsupportedLanguageExceptionFault, UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
@@ -208,10 +218,10 @@ public class EvaluateResource {
 
         final String METHODNAME = "evaluateAtSpecifiedTime ";
 
-        ObjectMapper mapper = new ObjectMapper();
+        final ObjectMapper mapper = new ObjectMapper();
 
         EvaluateAtSpecifiedTime evaluateAtSpecifiedTime;
-        MediaType mediaType = header.getMediaType();
+        final MediaType mediaType = header.getMediaType();
 
         log.debug(METHODNAME + "mediaType=" + mediaType);
         log.debug(METHODNAME + "mediaType.toString()=" + mediaType.toString());
@@ -239,18 +249,18 @@ public class EvaluateResource {
 
             preEvaluate(evaluateAtSpecifiedTime);
             Response.ResponseBuilder responseBuilder;
-            EvaluateAtSpecifiedTimeResponse evaluateAtSpecifiedTimeResponse = evaluationService
+            final EvaluateAtSpecifiedTimeResponse evaluateAtSpecifiedTimeResponse = evaluationService
                     .evaluateAtSpecifiedTime(evaluateAtSpecifiedTime);
-            EvaluationResponse evaluationResponse = evaluateAtSpecifiedTimeResponse.getEvaluationResponse();
+            final EvaluationResponse evaluationResponse = evaluateAtSpecifiedTimeResponse.getEvaluationResponse();
 
-            List<MediaType> acceptableMediaTypes = header.getAcceptableMediaTypes();
+            final List<MediaType> acceptableMediaTypes = header.getAcceptableMediaTypes();
             log.debug(METHODNAME + "acceptableMediaTypes=" + acceptableMediaTypes);
 
             if (acceptableMediaTypes.contains(MediaType.APPLICATION_JSON_TYPE)) {
-                String data = mapper.writeValueAsString(evaluationResponse);
+                final String data = mapper.writeValueAsString(evaluationResponse);
                 responseBuilder = Response.ok(data).type(MediaType.APPLICATION_JSON);
             } else {
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                final ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 MarshalUtils.marshal(evaluationResponse, stream);
                 stream.toByteArray();
                 responseBuilder = Response.ok(new String(stream.toByteArray())).type(MediaType.APPLICATION_XML);
@@ -266,7 +276,7 @@ public class EvaluateResource {
      *
      * @param evaluateAtSpecifiedTime
      */
-    private void preEvaluate(EvaluateAtSpecifiedTime evaluateAtSpecifiedTime) {
+    private void preEvaluate(final EvaluateAtSpecifiedTime evaluateAtSpecifiedTime) {
         final String METHODNAME = "preEvaluate ";
         if (evaluateAtSpecifiedTime == null || evaluateAtSpecifiedTime.getEvaluationRequest() == null) {
             log.debug(METHODNAME + "an evaluateAtSpecifiedTime element is null!");
@@ -280,7 +290,7 @@ public class EvaluateResource {
      *
      * @param evaluate
      */
-    private void preEvaluate(Evaluate evaluate) {
+    private void preEvaluate(final Evaluate evaluate) {
         final String METHODNAME = "preEvaluate ";
         if (evaluate == null || evaluate.getEvaluationRequest() == null) {
             log.debug(METHODNAME + "an evaluate element is null!");
@@ -294,7 +304,7 @@ public class EvaluateResource {
      *
      * @param evaluationRequest
      */
-    private void preEvaluate(EvaluationRequest evaluationRequest) {
+    private void preEvaluate(final EvaluationRequest evaluationRequest) {
         final String METHODNAME = "preEvaluate ";
         if (evaluationRequest == null) {
             log.debug(METHODNAME + "evaluationRequest is null!");
@@ -307,31 +317,59 @@ public class EvaluateResource {
             return;
         }
 
-        long start = System.nanoTime();
+        final long start = System.nanoTime();
         try {
-            Builder preEvaluateBuilder = getPreEvaluateInvocationBuilder(context);
+            final Builder preEvaluateBuilder = getPreEvaluateInvocationBuilder();
             if (preEvaluateBuilder == null) {
                 log.debug(METHODNAME + "builder is null - skipping preEvaluate");
                 return;
             }
             Response response;
-            PreEvaluateHookType hookType = getPreEvaluateHookType();
+            final PreEvaluateHookType hookType = getPreEvaluateHookType();
+            final UpdateCheck updateCheck = new UpdateCheck();
+
+            final CDMId defaultCdmId = ConfigUtils.getDefaultCdmId();
+            if (defaultCdmId != null) {
+                final CdmIdCheck cdmIdCheck = new CdmIdCheck(defaultCdmId,
+                        ConfigUtils.isCdmExists(defaultCdmId, configurationService));
+                updateCheck.getCdmIdChecks().add(cdmIdCheck);
+            }
+
+            final String instanceId = System.getProperty("preEvaluateUuid");
+            if (instanceId == null || instanceId.trim().isEmpty()) {
+                throw new IllegalStateException(METHODNAME + "preEvaluateUuid is null!");
+            } else {
+                log.debug(METHODNAME + "instanceId: " + instanceId);
+            }
+            updateCheck.setInstanceId(instanceId);
+
+            // set the environment
+            final String environment = context.getContextPath().toLowerCase().contains("test") ? "TEST" : "PRODUCTION";
+            log.debug(METHODNAME + "environment: " + environment);
+            updateCheck.setEnvironment(environment);
 
             switch (hookType) {
                 case ENTITY_IDENTIFIER:
-                    response = preEvaluateBuilder.put(
-                            Entity.entity(evaluationRequest.getKmEvaluationRequest(), MediaType.APPLICATION_JSON_TYPE));
-                    UpdateResponse updateResponse = response.readEntity(UpdateResponse.class);
-                    UpdateResponseResult result = ConfigUtils.update(updateResponse, configurationService);
+                    final List<KMEvaluationRequest> kmEvaluationRequests = evaluationRequest.getKmEvaluationRequest();
+                    for (final KMEvaluationRequest kmEvaluationRequest : kmEvaluationRequests) {
+                        final KMId kmId = (KMId) kmEvaluationRequest.getKmId();
+                        final boolean exists = ConfigUtils.isKmExists(kmId, configurationService);
+                        final KmIdCheck kmIdCheck = new KmIdCheck(kmId, exists);
+                        updateCheck.getKmIdChecks().add(kmIdCheck);
+                    }
+                    response = preEvaluateBuilder.put(Entity.entity(updateCheck, MediaType.APPLICATION_JSON_TYPE));
+                    final UpdateResponse updateResponse = response.readEntity(UpdateResponse.class);
+                    final UpdateResponseResult result = ConfigUtils.update(updateResponse, configurationService,
+                            environment, instanceId);
                     if (result.getCdm() != null || (result.getKms() != null && result.getKms().size() > 0)) {
-                        Builder failureBuilder = getPreEvaluateFailureInvocationBuilder(context);
+                        final Builder failureBuilder = getPreEvaluateFailureInvocationBuilder();
                         response = failureBuilder.put(Entity.entity(result, MediaType.APPLICATION_JSON_TYPE));
                     }
                     break;
                 case EVALUATION_REQUEST:
-                    response = preEvaluateBuilder
-                            .put(Entity.entity(evaluationRequest, MediaType.APPLICATION_JSON_TYPE));
-                    EvaluationRequest evaluationRequestResponse = response.readEntity(EvaluationRequest.class);
+                    updateCheck.setEvaluationRequest(evaluationRequest);
+                    response = preEvaluateBuilder.put(Entity.entity(updateCheck, MediaType.APPLICATION_JSON_TYPE));
+                    final EvaluationRequest evaluationRequestResponse = response.readEntity(EvaluationRequest.class);
                     evaluationRequest.getKmEvaluationRequest().clear();
                     evaluationRequest.getKmEvaluationRequest()
                             .addAll(evaluationRequestResponse.getKmEvaluationRequest());
@@ -350,53 +388,36 @@ public class EvaluateResource {
         }
     }
 
-    private static Builder getPreEvaluateInvocationBuilder(ServletContext context) {
+    private static Builder getPreEvaluateInvocationBuilder() {
         final String METHODNAME = "getPreEvaluateInvocationBuilder ";
 
         if (preEvaluateInvocationBuilder == null) {
 
-            String preEvaluateHookUri = System.getProperty("preEvaluateHookUri");
+            final String preEvaluateHookUri = System.getProperty("preEvaluateHookUri");
             if (preEvaluateHookUri == null || preEvaluateHookUri.trim().isEmpty()) {
                 log.debug(METHODNAME + "preEvaluateHookUri is null!");
                 return preEvaluateInvocationBuilder;
             } else {
                 log.debug(METHODNAME + "preEvaluateHookUri: " + preEvaluateHookUri);
-            }
-
-            String preEvaluateUuid = System.getProperty("preEvaluateUuid");
-            if (preEvaluateUuid == null || preEvaluateUuid.trim().isEmpty()) {
-                log.error(METHODNAME + "preEvaluateUuid is null!");
-                return preEvaluateInvocationBuilder;
-            } else {
-                log.debug(METHODNAME + "preEvaluateUuid: " + preEvaluateUuid);
             }
 
             log.info(METHODNAME + "initializing invocation builder");
 
-            ClientConfig config = new ClientConfig();
+            final ClientConfig config = new ClientConfig();
             config.register(JacksonJsonProvider.class);
-            Client client = ClientBuilder.newClient(config);
-            WebTarget webTarget = client.target(preEvaluateHookUri);
+            final Client client = ClientBuilder.newClient(config);
+            final WebTarget webTarget = client.target(preEvaluateHookUri);
             preEvaluateInvocationBuilder = webTarget.request(MediaType.APPLICATION_JSON);
-
-            // set the instanceid
-            preEvaluateInvocationBuilder.header("instanceid", preEvaluateUuid);
-
-            // set the environment
-            boolean isTest = context.getContextPath().toLowerCase().contains("test");
-            log.debug(METHODNAME + "isTest: " + isTest);
-            preEvaluateInvocationBuilder.header("environment", isTest ? "TEST" : "PRODUCTION");
-
         }
         return preEvaluateInvocationBuilder;
     }
 
-    private static Builder getPreEvaluateFailureInvocationBuilder(ServletContext context) {
+    private static Builder getPreEvaluateFailureInvocationBuilder() {
         final String METHODNAME = "getPreEvaluateFailureInvocationBuilder ";
 
         if (preEvaluateFailureInvocationBuilder == null) {
 
-            String preEvaluateHookUri = System.getProperty("preEvaluateHookUri");
+            final String preEvaluateHookUri = System.getProperty("preEvaluateHookUri");
             if (preEvaluateHookUri == null || preEvaluateHookUri.trim().isEmpty()) {
                 log.debug(METHODNAME + "preEvaluateHookUri is null!");
                 return preEvaluateFailureInvocationBuilder;
@@ -404,7 +425,7 @@ public class EvaluateResource {
                 log.debug(METHODNAME + "preEvaluateHookUri: " + preEvaluateHookUri);
             }
 
-            String preEvaluateUuid = System.getProperty("preEvaluateUuid");
+            final String preEvaluateUuid = System.getProperty("preEvaluateUuid");
             if (preEvaluateUuid == null || preEvaluateUuid.trim().isEmpty()) {
                 log.error(METHODNAME + "preEvaluateUuid is null!");
                 return preEvaluateFailureInvocationBuilder;
@@ -412,7 +433,7 @@ public class EvaluateResource {
                 log.debug(METHODNAME + "preEvaluateUuid: " + preEvaluateUuid);
             }
 
-            String preEvaluateTimeoutString = System.getProperty("preEvaluateTimeout");
+            final String preEvaluateTimeoutString = System.getProperty("preEvaluateTimeout");
             int preEvaluateTimeout;
             if (preEvaluateTimeoutString == null || preEvaluateTimeoutString.trim().isEmpty()) {
                 log.debug(METHODNAME + "preEvaluateTimeoutString is null!");
@@ -420,7 +441,7 @@ public class EvaluateResource {
             } else {
                 try {
                     preEvaluateTimeout = Integer.parseInt(preEvaluateTimeoutString);
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     preEvaluateTimeout = DEFAULT_CLIENT_TIMEOUT;
                 }
             }
@@ -428,23 +449,14 @@ public class EvaluateResource {
 
             log.info(METHODNAME + "initializing invocation builder");
 
-            ClientConfig config = new ClientConfig();
+            final ClientConfig config = new ClientConfig();
             config.register(JacksonJsonProvider.class);
-            Client client = ClientBuilder.newClient(config);
+            final Client client = ClientBuilder.newClient(config);
             client.property(ClientProperties.CONNECT_TIMEOUT, preEvaluateTimeout);
             client.property(ClientProperties.READ_TIMEOUT, preEvaluateTimeout);
 
-            WebTarget webTarget = client.target(preEvaluateHookUri);
+            final WebTarget webTarget = client.target(preEvaluateHookUri);
             preEvaluateFailureInvocationBuilder = webTarget.path("failed").request(MediaType.APPLICATION_JSON);
-
-            // set the instanceid
-            preEvaluateFailureInvocationBuilder.header("instanceid", preEvaluateUuid);
-
-            // set the environment
-            boolean isTest = context.getContextPath().toLowerCase().contains("test");
-            log.debug(METHODNAME + "isTest: " + isTest);
-            preEvaluateFailureInvocationBuilder.header("environment", isTest ? "TEST" : "PRODUCTION");
-
         }
         return preEvaluateFailureInvocationBuilder;
     }
@@ -460,5 +472,4 @@ public class EvaluateResource {
         log.debug(METHODNAME + "preEvaluateHookType: " + preEvaluateHookType);
         return preEvaluateHookType;
     }
-
 }
