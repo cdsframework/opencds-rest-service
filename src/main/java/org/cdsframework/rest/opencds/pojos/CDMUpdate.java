@@ -26,7 +26,7 @@ public class CDMUpdate {
      *
      * @param cdmId new value of cdmId
      */
-    public void setCdmId(CDMIdImpl cdmId) {
+    public void setCdmId(final CDMIdImpl cdmId) {
         this.cdmId = cdmId;
     }
 
@@ -44,7 +44,7 @@ public class CDMUpdate {
      *
      * @param cdm new value of cdm
      */
-    public void setCdm(byte[] cdm) {
+    public void setCdm(final byte[] cdm) {
         this.cdm = cdm;
     }
 }

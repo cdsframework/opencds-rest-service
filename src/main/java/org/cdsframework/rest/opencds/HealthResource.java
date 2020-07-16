@@ -40,9 +40,9 @@ public class HealthResource {
     @Path("healthcheck")
     public Response healthcheck() throws JsonProcessingException {
         log.debug("/healthcheck called!");
-        ObjectMapper mapper = new ObjectMapper();
-        String response = mapper.writeValueAsString(new HealthCheck(200, "all's well"));
-        Response.ResponseBuilder responseBuilder = Response.ok(response).type(MediaType.APPLICATION_JSON);
+        final ObjectMapper mapper = new ObjectMapper();
+        final String response = mapper.writeValueAsString(new HealthCheck(200, "all's well"));
+        final Response.ResponseBuilder responseBuilder = Response.ok(response).type(MediaType.APPLICATION_JSON);
         return responseBuilder.build();
     }
 

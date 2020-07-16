@@ -7,7 +7,7 @@ import org.opencds.config.api.model.impl.KMIdImpl;
  * @author sdn
  */
 public class KMUpdate {
-    
+
     private KMIdImpl kmId;
     private byte[] kmPackage;
 
@@ -25,7 +25,7 @@ public class KMUpdate {
      *
      * @param kmId new value of kmId
      */
-    public void setKmId(KMIdImpl kmId) {
+    public void setKmId(final KMIdImpl kmId) {
         this.kmId = kmId;
     }
 
@@ -43,7 +43,7 @@ public class KMUpdate {
      *
      * @param kmPackage new value of kmPackage
      */
-    public void setKmPackage(byte[] kmPackage) {
+    public void setKmPackage(final byte[] kmPackage) {
         this.kmPackage = kmPackage;
     }
 

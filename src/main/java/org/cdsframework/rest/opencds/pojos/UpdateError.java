@@ -5,13 +5,33 @@ package org.cdsframework.rest.opencds.pojos;
  * @author sdn
  */
 public class UpdateError {
-    
+
     private Integer status;
     private String message;
+    private String environment;
+    private String instanceId;
 
-    public UpdateError(Integer status, String message) {
+    public UpdateError(Integer status, String message, String environment, String instanceId) {
         this.status = status;
         this.message = message;
+        this.environment = environment;
+        this.instanceId = instanceId;
+    }
+
+    public String getEnvironment() {
+        return this.environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
+    }
+
+    public String getInstanceId() {
+        return this.instanceId;
+    }
+
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
     }
 
     /**
