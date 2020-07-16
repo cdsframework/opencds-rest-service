@@ -15,6 +15,9 @@ import java.util.zip.GZIPInputStream;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.transform.TransformerException;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.cdsframework.rest.opencds.utils.MarshalUtils;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -30,6 +33,7 @@ import org.omg.dss.evaluation.EvaluateAtSpecifiedTime;
 public class JsonUnitTest {
 
     private static final ObjectMapper mapper = new ObjectMapper();
+    private static final Log log = LogFactory.getLog(JsonUnitTest.class);
 
     public JsonUnitTest() {
     }
@@ -63,7 +67,7 @@ public class JsonUnitTest {
         fileInputStream.close();
 
         String jsonString = mapper.writeValueAsString(evaluateAtSpecifiedTime);
-        // System.out.println(jsonString);
+        log.debug(jsonString);
 
         file = new File("src/test/resources/sampleEvaluateAtSpecifiedTime.json");
 
@@ -73,21 +77,19 @@ public class JsonUnitTest {
 
         fileInputStream.close();
 
-        // InputStream inputStream = new
-        // ByteArrayInputStream(evaluateAtSpecifiedTime.getEvaluationRequest()
-        // .getDataRequirementItemData().get(0).getData().getBase64EncodedPayload().get(0));
-        // GZIPInputStream gzipInputStream = new GZIPInputStream(inputStream);
-        // BufferedReader bufferedReader = new BufferedReader(new
-        // InputStreamReader(gzipInputStream, "UTF-8"));
-        // StringBuilder stringBuilder = new StringBuilder();
-        // String line;
-        // while ((line = bufferedReader.readLine()) != null) {
-        // stringBuilder.append(line);
-        // }
-        // bufferedReader.close();
-        // gzipInputStream.close();
-        // inputStream.close();
-        // System.out.println(stringBuilder.toString());
+        InputStream inputStream = new ByteArrayInputStream(evaluateAtSpecifiedTime.getEvaluationRequest()
+                .getDataRequirementItemData().get(0).getData().getBase64EncodedPayload().get(0));
+        GZIPInputStream gzipInputStream = new GZIPInputStream(inputStream);
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(gzipInputStream, "UTF-8"));
+        StringBuilder stringBuilder = new StringBuilder();
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+            stringBuilder.append(line);
+        }
+        bufferedReader.close();
+        gzipInputStream.close();
+        inputStream.close();
+        log.debug(stringBuilder.toString());
 
     }
 }
