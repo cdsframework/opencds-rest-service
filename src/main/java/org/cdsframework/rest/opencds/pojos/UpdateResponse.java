@@ -9,7 +9,7 @@ import java.util.List;
 public class UpdateResponse {
 
     private List<KMUpdate> kmUpdates;
-    private CDMUpdate cdmUpdate;
+    private List<CDMUpdate> cdmUpdates;
 
     /**
      * Get the value of kmUpdates
@@ -30,21 +30,21 @@ public class UpdateResponse {
     }
 
     /**
-     * Get the value of cdmUpdate
+     * Get the value of cdmUpdates
      *
-     * @return the value of cdmUpdate
+     * @return the value of cdmUpdates
      */
-    public CDMUpdate getCdmUpdate() {
-        return cdmUpdate;
+    public List<CDMUpdate> getCdmUpdates() {
+        return cdmUpdates;
     }
 
     /**
-     * Set the value of cdmUpdate
+     * Set the value of cdmUpdates
      *
-     * @param cdmUpdate new value of cdmUpdate
+     * @param cdmUpdates new value of cdmUpdates
      */
-    public void setCdmUpdate(final CDMUpdate cdmUpdate) {
-        this.cdmUpdate = cdmUpdate;
+    public void setCdmUpdates(final List<CDMUpdate> cdmUpdates) {
+        this.cdmUpdates = cdmUpdates;
     }
 
 }

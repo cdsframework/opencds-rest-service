@@ -1,5 +1,6 @@
 package org.cdsframework.rest.opencds.pojos;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -8,8 +9,26 @@ import java.util.List;
  */
 public class UpdateResponseResult {
 
-    private List<KMUpdateResult> kms;
-    private CDMUpdateResult cdm;
+    private List<KMUpdateResult> kms = new ArrayList<>();
+    private List<CDMUpdateResult> cdms = new ArrayList<>();
+    private String environment;
+    private String instanceId;
+
+    public String getEnvironment() {
+        return this.environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
+    }
+
+    public String getInstanceId() {
+        return this.instanceId;
+    }
+
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
+    }
 
     /**
      * Get the value of kms
@@ -30,21 +49,21 @@ public class UpdateResponseResult {
     }
 
     /**
-     * Get the value of cdm
+     * Get the value of cdms
      *
-     * @return the value of cdm
+     * @return the value of cdms
      */
-    public CDMUpdateResult getCdm() {
-        return cdm;
+    public List<CDMUpdateResult> getCdms() {
+        return cdms;
     }
 
     /**
-     * Set the value of cdm
+     * Set the value of cdms
      *
-     * @param cdm new value of cdm
+     * @param cdms new value of cdms
      */
-    public void setCdm(final CDMUpdateResult cdm) {
-        this.cdm = cdm;
+    public void setCdms(final List<CDMUpdateResult> cdms) {
+        this.cdms = cdms;
     }
 
 }

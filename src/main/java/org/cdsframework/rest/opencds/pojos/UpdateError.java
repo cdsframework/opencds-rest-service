@@ -8,30 +8,10 @@ public class UpdateError {
 
     private Integer status;
     private String message;
-    private String environment;
-    private String instanceId;
 
-    public UpdateError(Integer status, String message, String environment, String instanceId) {
+    public UpdateError(Integer status, String message) {
         this.status = status;
         this.message = message;
-        this.environment = environment;
-        this.instanceId = instanceId;
-    }
-
-    public String getEnvironment() {
-        return this.environment;
-    }
-
-    public void setEnvironment(String environment) {
-        this.environment = environment;
-    }
-
-    public String getInstanceId() {
-        return this.instanceId;
-    }
-
-    public void setInstanceId(String instanceId) {
-        this.instanceId = instanceId;
     }
 
     /**

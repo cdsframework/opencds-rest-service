@@ -12,10 +12,9 @@ public class KMUpdateResult {
     private KMIdImpl kmId;
     private UpdateError error;
 
-    public KMUpdateResult(final KMId kmId, final Integer status, final String message, final String environment,
-            final String instanceId) {
+    public KMUpdateResult(final KMId kmId, final Integer status, final String message) {
         this.kmId = KMIdImpl.create(kmId);
-        this.error = new UpdateError(status, message, environment, instanceId);
+        this.error = new UpdateError(status, message);
     }
 
     /**

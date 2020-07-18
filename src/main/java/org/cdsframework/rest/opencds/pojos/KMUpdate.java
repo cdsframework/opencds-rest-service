@@ -10,6 +10,15 @@ public class KMUpdate {
 
     private KMIdImpl kmId;
     private byte[] kmPackage;
+    private String error;
+
+    public String getError() {
+        return this.error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
 
     /**
      * Get the value of kmId
