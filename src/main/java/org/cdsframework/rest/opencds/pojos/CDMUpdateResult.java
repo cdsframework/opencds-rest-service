@@ -11,7 +11,7 @@ public class CDMUpdateResult {
 
     private UpdateError error;
 
-    private CDMId cdmId;
+    private CDMIdImpl cdmId;
 
     public CDMUpdateResult(final CDMId cdmId, final Integer status, final String message) {
         this.cdmId = CDMIdImpl.create(cdmId);
@@ -23,7 +23,7 @@ public class CDMUpdateResult {
      *
      * @return the value of cdmId
      */
-    public CDMId getCdmId() {
+    public CDMIdImpl getCdmId() {
         return cdmId;
     }
 
@@ -32,7 +32,7 @@ public class CDMUpdateResult {
      *
      * @param cdmId new value of cdmId
      */
-    public void setCdmId(final CDMId cdmId) {
+    public void setCdmId(final CDMIdImpl cdmId) {
         this.cdmId = cdmId;
     }
 

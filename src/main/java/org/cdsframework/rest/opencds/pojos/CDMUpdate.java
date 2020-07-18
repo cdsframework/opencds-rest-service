@@ -1,6 +1,6 @@
 package org.cdsframework.rest.opencds.pojos;
 
-import org.opencds.config.api.model.CDMId;
+import org.opencds.config.api.model.impl.CDMIdImpl;
 
 /**
  *
@@ -9,7 +9,7 @@ import org.opencds.config.api.model.CDMId;
 public class CDMUpdate {
 
     private byte[] cdm;
-    private CDMId cdmId;
+    private CDMIdImpl cdmId;
     private String error;
 
     public String getError() {
@@ -25,7 +25,7 @@ public class CDMUpdate {
      *
      * @return the value of cdmId
      */
-    public CDMId getCdmId() {
+    public CDMIdImpl getCdmId() {
         return cdmId;
     }
 
@@ -34,7 +34,7 @@ public class CDMUpdate {
      *
      * @param cdmId new value of cdmId
      */
-    public void setCdmId(final CDMId cdmId) {
+    public void setCdmId(final CDMIdImpl cdmId) {
         this.cdmId = cdmId;
     }
 
