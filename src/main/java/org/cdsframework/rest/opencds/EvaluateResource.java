@@ -360,7 +360,8 @@ public class EvaluateResource {
                     final UpdateResponse updateResponse = response.readEntity(UpdateResponse.class);
                     final UpdateResponseResult result = ConfigUtils.update(updateResponse, configurationService,
                             environment, instanceId);
-                    if (result.getCdm() != null || (result.getKms() != null && result.getKms().size() > 0)) {
+                    if ((result.getCdms() != null && !result.getCdms().isEmpty())
+                            || (result.getKms() != null && !result.getKms().isEmpty())) {
                         final Builder failureBuilder = getPreEvaluateFailureInvocationBuilder();
                         response = failureBuilder.put(Entity.entity(result, MediaType.APPLICATION_JSON_TYPE));
                     }

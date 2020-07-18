@@ -12,6 +12,7 @@ import javax.xml.transform.TransformerException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.cdsframework.rest.opencds.pojos.CDMUpdate;
 import org.cdsframework.rest.opencds.pojos.CDMUpdateResult;
 import org.cdsframework.rest.opencds.pojos.KMUpdate;
 import org.cdsframework.rest.opencds.pojos.KMUpdateResult;
@@ -81,59 +82,63 @@ public class ConfigUtils {
             final ConfigurationService configurationService, final String environment, final String instanceId) {
         final String METHODNAME = "update ";
         final UpdateResponseResult result = new UpdateResponseResult();
-        if (updateResponse != null && updateResponse.getCdmUpdate() != null
-                && updateResponse.getCdmUpdate().getCdm() != null && updateResponse.getCdmUpdate().getCdm().length > 0
-                && updateResponse.getCdmUpdate().getCdmId() != null
-                && updateResponse.getCdmUpdate().getCdmId().getCode() != null
-                && updateResponse.getCdmUpdate().getCdmId().getCodeSystem() != null
-                && updateResponse.getCdmUpdate().getCdmId().getVersion() != null) {
+        result.setEnvironment(environment);
+        result.setInstanceId(instanceId);
+        if (updateResponse != null && updateResponse.getCdmUpdates() != null) {
+            for (final CDMUpdate cdmUpdate : updateResponse.getCdmUpdates()) {
+                if (cdmUpdate != null && cdmUpdate.getCdmId() != null && cdmUpdate.getCdmId().getCode() != null
+                        && cdmUpdate.getCdmId().getCodeSystem() != null && cdmUpdate.getCdmId().getVersion() != null
+                        && cdmUpdate.getCdm() != null && cdmUpdate.getCdm().length > 0) {
+                    final CDMId cdmId = cdmUpdate.getCdmId();
 
-            final CDMId cdmId = updateResponse.getCdmUpdate().getCdmId();
+                    log.debug(METHODNAME + "CDM code: " + cdmId.getCode());
+                    log.debug(METHODNAME + "CDM codeSystem: " + cdmId.getCodeSystem());
+                    log.debug(METHODNAME + "CDM version: " + cdmId.getVersion());
+                    log.debug(METHODNAME + "CDM length: " + cdmUpdate.getCdm().length);
 
-            log.debug(METHODNAME + "CDM code: " + cdmId.getCode());
-            log.debug(METHODNAME + "CDM codeSystem: " + cdmId.getCodeSystem());
-            log.debug(METHODNAME + "CDM version: " + cdmId.getVersion());
-            log.debug(METHODNAME + "CDM length: " + updateResponse.getCdmUpdate().getCdm().length);
+                    ConceptDeterminationMethods cdms = null;
 
-            ConceptDeterminationMethods cdms = null;
+                    try {
+                        cdms = MarshalUtils.unmarshal(new ByteArrayInputStream(cdmUpdate.getCdm()),
+                                ConceptDeterminationMethods.class);
+                    } catch (JAXBException | TransformerException e) {
+                        final String error = ExceptionUtils.getStackTrace(e);
+                        result.getCdms().add(new CDMUpdateResult(cdmId, 500, error));
+                        log.error(e);
+                    }
 
-            try {
-                cdms = MarshalUtils.unmarshal(new ByteArrayInputStream(updateResponse.getCdmUpdate().getCdm()),
-                        ConceptDeterminationMethods.class);
-            } catch (JAXBException | TransformerException e) {
-                final String error = ExceptionUtils.getStackTrace(e);
-                result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
-                log.error(e);
-            }
-
-            if (cdms != null) {
-                if (cdms.getConceptDeterminationMethod() == null) {
-                    final String error = "cdms.getConceptDeterminationMethod() is null!";
-                    result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
-                    log.error(METHODNAME + error);
-                } else if (cdms.getConceptDeterminationMethod().isEmpty()) {
-                    final String error = "cdms.getConceptDeterminationMethod() is empty!";
-                    result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
-                    log.error(METHODNAME + error);
-                } else if (cdms.getConceptDeterminationMethod().size() > 1) {
-                    final String error = "cdms.getConceptDeterminationMethod() is only allow to have one cdm!";
-                    result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
-                    log.error(METHODNAME + error);
-                } else {
-                    final ConceptDeterminationMethod cdm = cdms.getConceptDeterminationMethod().get(0);
-                    if (cdm == null) {
-                        final String error = "cdm is null!";
-                        result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
-                        log.error(METHODNAME + error);
-                    } else {
-                        try {
-                            ConfigUtils.updateConceptDeterminationMethod(cdmId, cdm, configurationService);
-                        } catch (final Exception e) {
-                            final String error = ExceptionUtils.getStackTrace(e);
-                            result.setCdm(new CDMUpdateResult(cdmId, 500, error, environment, instanceId));
-                            log.error(e);
+                    if (cdms != null) {
+                        if (cdms.getConceptDeterminationMethod() == null) {
+                            final String error = "cdms.getConceptDeterminationMethod() is null!";
+                            result.getCdms().add(new CDMUpdateResult(cdmId, 500, error));
+                            log.error(METHODNAME + error);
+                        } else if (cdms.getConceptDeterminationMethod().isEmpty()) {
+                            final String error = "cdms.getConceptDeterminationMethod() is empty!";
+                            result.getCdms().add(new CDMUpdateResult(cdmId, 500, error));
+                            log.error(METHODNAME + error);
+                        } else if (cdms.getConceptDeterminationMethod().size() > 1) {
+                            final String error = "cdms.getConceptDeterminationMethod() is only allow to have one cdm!";
+                            result.getCdms().add(new CDMUpdateResult(cdmId, 500, error));
+                            log.error(METHODNAME + error);
+                        } else {
+                            final ConceptDeterminationMethod cdm = cdms.getConceptDeterminationMethod().get(0);
+                            if (cdm == null) {
+                                final String error = "cdm is null!";
+                                result.getCdms().add(new CDMUpdateResult(cdmId, 500, error));
+                                log.error(METHODNAME + error);
+                            } else {
+                                try {
+                                    ConfigUtils.updateConceptDeterminationMethod(cdmId, cdm, configurationService);
+                                } catch (final Exception e) {
+                                    final String error = ExceptionUtils.getStackTrace(e);
+                                    result.getCdms().add(new CDMUpdateResult(cdmId, 500, error));
+                                    log.error(e);
+                                }
+                            }
                         }
                     }
+                } else {
+                    log.debug(METHODNAME + "something is null in the cdmUpdate.");
                 }
             }
         } else {
@@ -171,12 +176,7 @@ public class ConfigUtils {
                         ConfigUtils.updateKnowledgeModulePackage(kmId, kmPackageInputStream, configurationService);
                     } catch (final Exception e) {
                         final String error = ExceptionUtils.getStackTrace(e);
-                        List<KMUpdateResult> kms = result.getKms();
-                        if (kms == null) {
-                            kms = new ArrayList<>();
-                            result.setKms(kms);
-                        }
-                        kms.add(new KMUpdateResult(kmId, 500, error, environment, instanceId));
+                        result.getKms().add(new KMUpdateResult(kmId, 500, error));
                         log.error(e);
                     }
                 } else {
@@ -256,15 +256,15 @@ public class ConfigUtils {
     public static CDMId getDefaultCdmId() {
         final String METHODNAME = "getDefaultCdmId ";
 
-        String defaultCdmCode = System.getProperty("defaultCdmCode");
+        final String defaultCdmCode = System.getProperty("defaultCdmCode");
         if (defaultCdmCode == null || defaultCdmCode.trim().isEmpty()) {
             throw new IllegalStateException(METHODNAME + "defaultCdmCode is null!");
         }
-        String defaultCdmCodeSystem = System.getProperty("defaultCdmCodeSystem");
+        final String defaultCdmCodeSystem = System.getProperty("defaultCdmCodeSystem");
         if (defaultCdmCodeSystem == null || defaultCdmCodeSystem.trim().isEmpty()) {
             throw new IllegalStateException(METHODNAME + "defaultCdmCodeSystem is null!");
         }
-        String defaultCdmVersion = System.getProperty("defaultCdmVersion");
+        final String defaultCdmVersion = System.getProperty("defaultCdmVersion");
         if (defaultCdmVersion == null || defaultCdmVersion.trim().isEmpty()) {
             throw new IllegalStateException(METHODNAME + "defaultCdmVersion is null!");
         }
