@@ -1,11 +1,14 @@
 package org.cdsframework.rest.opencds.pojos;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import org.opencds.config.api.model.impl.CDMIdImpl;
 
 /**
  *
  * @author sdn
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CDMUpdate {
 
     private byte[] cdm;
