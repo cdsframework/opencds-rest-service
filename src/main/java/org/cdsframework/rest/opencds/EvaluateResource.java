@@ -48,6 +48,7 @@ import org.omg.dss.RequiredDataNotProvidedExceptionFault;
 import org.omg.dss.UnrecognizedLanguageExceptionFault;
 import org.omg.dss.UnrecognizedScopedEntityExceptionFault;
 import org.omg.dss.UnsupportedLanguageExceptionFault;
+import org.omg.dss.common.EntityIdentifier;
 import org.omg.dss.evaluation.Evaluate;
 import org.omg.dss.evaluation.EvaluateAtSpecifiedTime;
 import org.omg.dss.evaluation.EvaluateAtSpecifiedTimeResponse;
@@ -58,6 +59,7 @@ import org.omg.dss.evaluation.requestresponse.KMEvaluationRequest;
 import org.opencds.config.api.ConfigurationService;
 import org.opencds.config.api.model.CDMId;
 import org.opencds.config.api.model.KMId;
+import org.opencds.config.api.model.impl.KMIdImpl;
 import org.opencds.dss.evaluate.EvaluationService;
 
 /**
@@ -351,7 +353,9 @@ public class EvaluateResource {
                 case ENTITY_IDENTIFIER:
                     final List<KMEvaluationRequest> kmEvaluationRequests = evaluationRequest.getKmEvaluationRequest();
                     for (final KMEvaluationRequest kmEvaluationRequest : kmEvaluationRequests) {
-                        final KMId kmId = (KMId) kmEvaluationRequest.getKmId();
+                        EntityIdentifier entityIdentifier = kmEvaluationRequest.getKmId();
+                        final KMId kmId = KMIdImpl.create(entityIdentifier.getScopingEntityId(),
+                                entityIdentifier.getBusinessId(), entityIdentifier.getVersion());
                         final boolean exists = ConfigUtils.isKmExists(kmId, configurationService);
                         final KmIdCheck kmIdCheck = new KmIdCheck(kmId, exists);
                         updateCheck.getKmIdChecks().add(kmIdCheck);
