@@ -2,10 +2,13 @@ package org.cdsframework.rest.opencds.pojos;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 /**
  *
  * @author sdn
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class UpdateResponse {
 
     private List<KMUpdate> kmUpdates;
