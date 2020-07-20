@@ -57,11 +57,9 @@ public class ExtendedOperationResource {
             InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
 
         final String METHODNAME = "evaluate ";
-        final ObjectMapper mapper = new ObjectMapper();
         try {
             Response evaluate = evaluateResource.evaluate(fhirPatient, header, response);
-            final EvaluationResponse evaluationResponse = evaluate.readEntity(EvaluationResponse.class);
-            final String data = mapper.writeValueAsString(evaluationResponse);
+            final String data = evaluate.readEntity(String.class);
             log.info(METHODNAME + "data=" + data);
             return Response.ok(data).type(MediaType.APPLICATION_JSON_TYPE).build();
         } finally {
@@ -69,8 +67,8 @@ public class ExtendedOperationResource {
     }
 
     @POST
-    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Consumes({ MediaType.APPLICATION_JSON })
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
     @Path("Patient/{patientId}/$evaluateAtSpecifiedTime")
     public Response evaluateAtSpecifiedTime(final String fhirPatient, @Context final HttpHeaders header,
             @Context final HttpServletResponse response)
@@ -81,13 +79,10 @@ public class ExtendedOperationResource {
 
         final String METHODNAME = "evaluateAtSpecifiedTime ";
 
-        final ObjectMapper mapper = new ObjectMapper();
         try {
             Response evaluateAtSpecifiedTimeResponse = evaluateResource.evaluateAtSpecifiedTime(fhirPatient, header,
                     response);
-            final EvaluationResponse evaluationResponse = evaluateAtSpecifiedTimeResponse
-                    .readEntity(EvaluationResponse.class);
-            final String data = mapper.writeValueAsString(evaluationResponse);
+            final String data = evaluateAtSpecifiedTimeResponse.readEntity(String.class);
             log.info(METHODNAME + "data=" + data);
             return Response.ok(data).type(MediaType.APPLICATION_JSON_TYPE).build();
         } finally {
