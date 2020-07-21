@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.omg.dss.evaluation.EvaluateAtSpecifiedTime;
+import org.omg.dss.evaluation.requestresponse.EvaluationResponse;
 
 /**
  *
@@ -57,9 +58,14 @@ public class JsonUnitTest {
     @Test
     public void hello()
             throws JAXBException, TransformerException, FileNotFoundException, JsonProcessingException, IOException {
-
-        File file = new File("src/test/resources/sampleEvaluateAtSpecifiedTime.xml");
+        File file = new File("src/test/resources/sampleEvaluationResponse.json");
         FileInputStream fileInputStream = new FileInputStream(file);
+        EvaluationResponse evaluationResponse = mapper.readValue(fileInputStream, EvaluationResponse.class);
+        fileInputStream.close();
+        log.info(evaluationResponse);
+
+        file = new File("src/test/resources/sampleEvaluateAtSpecifiedTime.xml");
+        fileInputStream = new FileInputStream(file);
 
         EvaluateAtSpecifiedTime evaluateAtSpecifiedTime = MarshalUtils.unmarshal(fileInputStream,
                 EvaluateAtSpecifiedTime.class);

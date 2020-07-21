@@ -1,8 +1,14 @@
 package org.cdsframework.rest.opencds;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
+import java.util.Base64;
+import java.util.zip.GZIPInputStream;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -45,9 +51,35 @@ public class ExtendedOperationResource {
         this.evaluateResource = evaluateResource;
     }
 
+    private static String getCdsOutputString(EvaluationResponse evaluationResponse) throws IOException {
+        String payload;
+        String businessId = evaluationResponse.getFinalKMEvaluationResponse().get(0).getKmEvaluationResultData().get(0)
+                .getEvaluationResultId().getContainingEntityId().getBusinessId();
+        if (businessId.toLowerCase().startsWith("gzip")) {
+
+            InputStream inputStream = new ByteArrayInputStream(evaluationResponse.getFinalKMEvaluationResponse().get(0)
+                    .getKmEvaluationResultData().get(0).getData().getBase64EncodedPayload().get(0));
+            GZIPInputStream gzipInputStream = new GZIPInputStream(inputStream);
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(gzipInputStream, "UTF-8"));
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            bufferedReader.close();
+            gzipInputStream.close();
+            inputStream.close();
+            payload = stringBuilder.toString();
+        } else {
+            payload = new String(Base64.getDecoder().decode(evaluationResponse.getFinalKMEvaluationResponse().get(0)
+                    .getKmEvaluationResultData().get(0).getData().getBase64EncodedPayload().get(0)));
+        }
+        return payload;
+    }
+
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })
     @Path("Patient/{patientId}/$evaluate")
     public Response evaluate(final String fhirPatient, @Context final HttpHeaders header,
             @Context final HttpServletResponse response)
@@ -57,18 +89,22 @@ public class ExtendedOperationResource {
             InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
 
         final String METHODNAME = "evaluate ";
+        final ObjectMapper mapper = new ObjectMapper();
+
         try {
             Response evaluate = evaluateResource.evaluate(fhirPatient, header, response);
-            final String data = evaluate.readEntity(String.class);
+            EvaluationResponse evaluationResponse = mapper.readValue(evaluate.readEntity(String.class),
+                    EvaluationResponse.class);
+            String data = getCdsOutputString(evaluationResponse);
             log.info(METHODNAME + "data=" + data);
-            return Response.ok(data).type(MediaType.APPLICATION_JSON_TYPE).build();
+            return Response.ok(data).type(MediaType.APPLICATION_XML).build();
         } finally {
         }
     }
 
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })
     @Path("Patient/{patientId}/$evaluateAtSpecifiedTime")
     public Response evaluateAtSpecifiedTime(final String fhirPatient, @Context final HttpHeaders header,
             @Context final HttpServletResponse response)
@@ -78,13 +114,16 @@ public class ExtendedOperationResource {
             InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
 
         final String METHODNAME = "evaluateAtSpecifiedTime ";
+        final ObjectMapper mapper = new ObjectMapper();
 
         try {
             Response evaluateAtSpecifiedTimeResponse = evaluateResource.evaluateAtSpecifiedTime(fhirPatient, header,
                     response);
-            final String data = evaluateAtSpecifiedTimeResponse.readEntity(String.class);
+            EvaluationResponse evaluationResponse = mapper
+                    .readValue(evaluateAtSpecifiedTimeResponse.readEntity(String.class), EvaluationResponse.class);
+            String data = getCdsOutputString(evaluationResponse);
             log.info(METHODNAME + "data=" + data);
-            return Response.ok(data).type(MediaType.APPLICATION_JSON_TYPE).build();
+            return Response.ok(data).type(MediaType.APPLICATION_XML).build();
         } finally {
         }
     }
