@@ -1,14 +1,8 @@
 package org.cdsframework.rest.opencds;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
-import java.util.Base64;
-import java.util.zip.GZIPInputStream;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -26,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.cdsframework.rest.opencds.utils.MarshalUtils;
 import org.omg.dss.DSSRuntimeExceptionFault;
 import org.omg.dss.EvaluationExceptionFault;
 import org.omg.dss.InvalidDriDataFormatExceptionFault;
@@ -51,32 +46,6 @@ public class ExtendedOperationResource {
         this.evaluateResource = evaluateResource;
     }
 
-    private static String getCdsOutputString(EvaluationResponse evaluationResponse) throws IOException {
-        String payload;
-        String businessId = evaluationResponse.getFinalKMEvaluationResponse().get(0).getKmEvaluationResultData().get(0)
-                .getEvaluationResultId().getContainingEntityId().getBusinessId();
-        if (businessId.toLowerCase().startsWith("gzip")) {
-
-            InputStream inputStream = new ByteArrayInputStream(evaluationResponse.getFinalKMEvaluationResponse().get(0)
-                    .getKmEvaluationResultData().get(0).getData().getBase64EncodedPayload().get(0));
-            GZIPInputStream gzipInputStream = new GZIPInputStream(inputStream);
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(gzipInputStream, "UTF-8"));
-            StringBuilder stringBuilder = new StringBuilder();
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                stringBuilder.append(line);
-            }
-            bufferedReader.close();
-            gzipInputStream.close();
-            inputStream.close();
-            payload = stringBuilder.toString();
-        } else {
-            payload = new String(Base64.getDecoder().decode(evaluationResponse.getFinalKMEvaluationResponse().get(0)
-                    .getKmEvaluationResultData().get(0).getData().getBase64EncodedPayload().get(0)));
-        }
-        return payload;
-    }
-
     @POST
     @Consumes({ MediaType.APPLICATION_JSON })
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })
@@ -95,7 +64,7 @@ public class ExtendedOperationResource {
             Response evaluate = evaluateResource.evaluate(fhirPatient, header, response);
             EvaluationResponse evaluationResponse = mapper.readValue(evaluate.readEntity(String.class),
                     EvaluationResponse.class);
-            String data = getCdsOutputString(evaluationResponse);
+            String data = MarshalUtils.getCdsOutputStringFromEvaluationResponse(evaluationResponse);
             log.info(METHODNAME + "data=" + data);
             return Response.ok(data).type(MediaType.APPLICATION_XML).build();
         } finally {
@@ -121,7 +90,7 @@ public class ExtendedOperationResource {
                     response);
             EvaluationResponse evaluationResponse = mapper
                     .readValue(evaluateAtSpecifiedTimeResponse.readEntity(String.class), EvaluationResponse.class);
-            String data = getCdsOutputString(evaluationResponse);
+            String data = MarshalUtils.getCdsOutputStringFromEvaluationResponse(evaluationResponse);
             log.info(METHODNAME + "data=" + data);
             return Response.ok(data).type(MediaType.APPLICATION_XML).build();
         } finally {

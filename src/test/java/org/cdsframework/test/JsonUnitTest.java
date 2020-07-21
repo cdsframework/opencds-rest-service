@@ -62,7 +62,15 @@ public class JsonUnitTest {
         FileInputStream fileInputStream = new FileInputStream(file);
         EvaluationResponse evaluationResponse = mapper.readValue(fileInputStream, EvaluationResponse.class);
         fileInputStream.close();
-        log.info(evaluationResponse);
+        String cdsOutput = MarshalUtils.getCdsOutputStringFromEvaluationResponse(evaluationResponse);
+        log.debug(cdsOutput);
+
+        file = new File("src/test/resources/sampleEvaluationResponseGzip.json");
+        fileInputStream = new FileInputStream(file);
+        evaluationResponse = mapper.readValue(fileInputStream, EvaluationResponse.class);
+        fileInputStream.close();
+        cdsOutput = MarshalUtils.getCdsOutputStringFromEvaluationResponse(evaluationResponse);
+        log.debug(cdsOutput);
 
         file = new File("src/test/resources/sampleEvaluateAtSpecifiedTime.xml");
         fileInputStream = new FileInputStream(file);

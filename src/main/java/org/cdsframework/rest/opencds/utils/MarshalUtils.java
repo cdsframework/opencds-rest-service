@@ -20,11 +20,17 @@
  */
 package org.cdsframework.rest.opencds.utils;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -282,4 +288,32 @@ public class MarshalUtils {
         result = canonicalName.substring(0, canonicalName.lastIndexOf("."));
         return result;
     }
+
+    public static String getCdsOutputStringFromEvaluationResponse(EvaluationResponse evaluationResponse)
+            throws IOException {
+        String payload;
+        String businessId = evaluationResponse.getFinalKMEvaluationResponse().get(0).getKmEvaluationResultData().get(0)
+                .getEvaluationResultId().getContainingEntityId().getBusinessId();
+        if (businessId.toLowerCase().startsWith("gzip")) {
+
+            InputStream inputStream = new ByteArrayInputStream(evaluationResponse.getFinalKMEvaluationResponse().get(0)
+                    .getKmEvaluationResultData().get(0).getData().getBase64EncodedPayload().get(0));
+            GZIPInputStream gzipInputStream = new GZIPInputStream(inputStream);
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(gzipInputStream, "UTF-8"));
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+            bufferedReader.close();
+            gzipInputStream.close();
+            inputStream.close();
+            payload = stringBuilder.toString();
+        } else {
+            payload = new String(evaluationResponse.getFinalKMEvaluationResponse().get(0).getKmEvaluationResultData()
+                    .get(0).getData().getBase64EncodedPayload().get(0));
+        }
+        return payload;
+    }
+
 }
