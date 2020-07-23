@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -41,7 +42,10 @@ import org.omg.dss.RequiredDataNotProvidedExceptionFault;
 import org.omg.dss.UnrecognizedLanguageExceptionFault;
 import org.omg.dss.UnrecognizedScopedEntityExceptionFault;
 import org.omg.dss.UnsupportedLanguageExceptionFault;
+import org.omg.dss.common.SemanticPayload;
 import org.omg.dss.evaluation.Evaluate;
+import org.omg.dss.evaluation.requestresponse.DataRequirementItemData;
+import org.omg.dss.evaluation.requestresponse.EvaluationRequest;
 import org.omg.dss.evaluation.requestresponse.EvaluationResponse;
 import org.opencds.vmr.v1_0.schema.CDSInput;
 import org.opencds.vmr.v1_0.schema.CDSOutput;
@@ -76,13 +80,14 @@ public class ExtendedOperationResource {
             InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
         try {
             CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations, observations);
-            Evaluate evaluate = new Evaluate();
+            String payload = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
+            Evaluate evaluate = this.createPacket(payload);
 
-            String packet = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
+            String packet = CdsObjectAssist.cdsObjectToString(evaluate, Evaluate.class);
 
-            Response evaluate = evaluateResource.evaluate(packet, header, response);
+            Response evaluation = evaluateResource.evaluate(packet, header, response);
 
-            return this.buildResponse(evaluate);
+            return this.buildResponse(evaluation);
         } finally {
         }
     }
@@ -100,7 +105,11 @@ public class ExtendedOperationResource {
             InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
         try {
             CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations, observations);
-            String packet = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
+            String payload = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
+
+            Evaluate evaluate = this.createPacket(payload);
+
+            String packet = CdsObjectAssist.cdsObjectToString(evaluate, Evaluate.class);
 
             Response evaluateAtSpecifiedTimeResponse = evaluateResource.evaluateAtSpecifiedTime(packet, header,
                     response);
@@ -145,5 +154,23 @@ public class ExtendedOperationResource {
         }
 
         return entries;
+    }
+
+    protected Evaluate createPacket(String payload) {
+        String encodedPacket = Base64.getEncoder().encodeToString(payload.getBytes());
+
+        SemanticPayload semanticPayload = new SemanticPayload();
+        semanticPayload.getBase64EncodedPayload().add(encodedPacket.getBytes());
+
+        DataRequirementItemData item = new DataRequirementItemData();
+        item.setData(semanticPayload);
+
+        EvaluationRequest evaluationRequest = new EvaluationRequest();
+        evaluationRequest.getDataRequirementItemData().add(item);
+
+        Evaluate packet = new Evaluate();
+        packet.setEvaluationRequest(evaluationRequest);
+
+        return packet;
     }
 }
