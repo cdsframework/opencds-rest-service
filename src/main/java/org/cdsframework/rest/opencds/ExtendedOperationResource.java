@@ -80,10 +80,7 @@ public class ExtendedOperationResource {
             InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
         try {
             CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations, observations);
-            String payload = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
-            Evaluate evaluate = this.createPacket(payload);
-
-            String packet = CdsObjectAssist.cdsObjectToString(evaluate, Evaluate.class);
+            String packet = this.createPacket(input);
 
             Response evaluation = evaluateResource.evaluate(packet, header, response);
 
@@ -105,11 +102,7 @@ public class ExtendedOperationResource {
             InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
         try {
             CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations, observations);
-            String payload = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
-
-            Evaluate evaluate = this.createPacket(payload);
-
-            String packet = CdsObjectAssist.cdsObjectToString(evaluate, Evaluate.class);
+            String packet = this.createPacket(input);
 
             Response evaluateAtSpecifiedTimeResponse = evaluateResource.evaluateAtSpecifiedTime(packet, header,
                     response);
@@ -156,7 +149,8 @@ public class ExtendedOperationResource {
         return entries;
     }
 
-    protected Evaluate createPacket(String payload) {
+    protected String createPacket(CDSInput input) {
+        String payload = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
         String encodedPacket = Base64.getEncoder().encodeToString(payload.getBytes());
 
         SemanticPayload semanticPayload = new SemanticPayload();
@@ -171,6 +165,6 @@ public class ExtendedOperationResource {
         Evaluate packet = new Evaluate();
         packet.setEvaluationRequest(evaluationRequest);
 
-        return packet;
+        return CdsObjectAssist.cdsObjectToString(packet, Evaluate.class);
     }
 }
