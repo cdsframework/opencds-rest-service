@@ -20,20 +20,19 @@ import javax.xml.transform.TransformerException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.cdsframework.cds.vmr.CdsObjectAssist;
 import org.cdsframework.messageconverter.Fhir2Vmr;
 import org.cdsframework.messageconverter.Vmr2Fhir;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.cdsframework.rest.opencds.utils.MarshalUtils;
 import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.ImmunizationEvaluation;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation;
 import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.omg.dss.DSSRuntimeExceptionFault;
 import org.omg.dss.EvaluationExceptionFault;
 import org.omg.dss.InvalidDriDataFormatExceptionFault;
@@ -42,6 +41,7 @@ import org.omg.dss.RequiredDataNotProvidedExceptionFault;
 import org.omg.dss.UnrecognizedLanguageExceptionFault;
 import org.omg.dss.UnrecognizedScopedEntityExceptionFault;
 import org.omg.dss.UnsupportedLanguageExceptionFault;
+import org.omg.dss.evaluation.Evaluate;
 import org.omg.dss.evaluation.requestresponse.EvaluationResponse;
 import org.opencds.vmr.v1_0.schema.CDSInput;
 import org.opencds.vmr.v1_0.schema.CDSOutput;
@@ -76,6 +76,8 @@ public class ExtendedOperationResource {
             InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
         try {
             CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations, observations);
+            Evaluate evaluate = new Evaluate();
+
             String packet = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
 
             Response evaluate = evaluateResource.evaluate(packet, header, response);
