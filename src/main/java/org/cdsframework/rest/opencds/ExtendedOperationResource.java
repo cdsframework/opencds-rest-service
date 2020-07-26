@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.GregorianCalendar;
 import java.util.List;
 
 import javax.servlet.http.HttpServletResponse;
@@ -17,6 +18,9 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.xml.bind.JAXBException;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.transform.TransformerException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,12 +31,13 @@ import org.cdsframework.cds.vmr.CdsObjectAssist;
 import org.cdsframework.messageconverter.Fhir2Vmr;
 import org.cdsframework.messageconverter.Vmr2Fhir;
 import org.cdsframework.rest.opencds.utils.MarshalUtils;
-import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
 import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.ImmunizationEvaluation;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation;
+import org.hl7.fhir.r4.model.Parameters;
+import org.hl7.fhir.r4.model.Parameters.ParametersParameterComponent;
 import org.hl7.fhir.r4.model.Patient;
 import org.omg.dss.DSSRuntimeExceptionFault;
 import org.omg.dss.EvaluationExceptionFault;
@@ -42,11 +47,15 @@ import org.omg.dss.RequiredDataNotProvidedExceptionFault;
 import org.omg.dss.UnrecognizedLanguageExceptionFault;
 import org.omg.dss.UnrecognizedScopedEntityExceptionFault;
 import org.omg.dss.UnsupportedLanguageExceptionFault;
+import org.omg.dss.common.EntityIdentifier;
+import org.omg.dss.common.InteractionIdentifier;
+import org.omg.dss.common.ItemIdentifier;
 import org.omg.dss.common.SemanticPayload;
-import org.omg.dss.evaluation.Evaluate;
+import org.omg.dss.evaluation.EvaluateAtSpecifiedTime;
 import org.omg.dss.evaluation.requestresponse.DataRequirementItemData;
 import org.omg.dss.evaluation.requestresponse.EvaluationRequest;
 import org.omg.dss.evaluation.requestresponse.EvaluationResponse;
+import org.omg.dss.evaluation.requestresponse.KMEvaluationRequest;
 import org.opencds.vmr.v1_0.schema.CDSInput;
 import org.opencds.vmr.v1_0.schema.CDSOutput;
 
@@ -69,44 +78,22 @@ public class ExtendedOperationResource {
     }
 
     @POST
-    @Consumes({ MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })
-    @Path("Patient/{patientId}/$evaluate")
-    public Response evaluate(Patient patient, List<Immunization> immunizations, List<Immunization> observations,
-            @Context final HttpHeaders header, @Context final HttpServletResponse response)
-            throws UnsupportedEncodingException, ParseException, IOException, InvalidDriDataFormatExceptionFault,
-            UnrecognizedLanguageExceptionFault, RequiredDataNotProvidedExceptionFault,
-            UnsupportedLanguageExceptionFault, UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
-            InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
-        try {
-            CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations, observations);
-            String packet = this.createPacket(input);
-
-            Response evaluation = evaluateResource.evaluate(packet, header, response);
-
-            return this.buildResponse(evaluation);
-        } finally {
-        }
-    }
-
-    @POST
-    @Consumes({ MediaType.APPLICATION_JSON })
+    @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
     @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })
     @Path("Patient/{patientId}/$evaluateAtSpecifiedTime")
     public Response evaluateAtSpecifiedTime(Patient patient, List<Immunization> immunizations,
-            List<Immunization> observations, @Context final HttpHeaders header,
-            @Context final HttpServletResponse response)
+            @Context final HttpHeaders header, @Context final HttpServletResponse response)
             throws ParseException, UnsupportedEncodingException, IOException, InvalidDriDataFormatExceptionFault,
             UnrecognizedLanguageExceptionFault, RequiredDataNotProvidedExceptionFault,
             UnsupportedLanguageExceptionFault, UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
             InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
         try {
-            CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations, observations);
+            CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations);
             String packet = this.createPacket(input);
 
-            Response evaluateAtSpecifiedTimeResponse = evaluateResource.evaluateAtSpecifiedTime(packet, header,
-                    response);
-            return this.buildResponse(evaluateAtSpecifiedTimeResponse);
+            Response evaluateAtSpecifiedTimeResponse =
+            evaluateResource.evaluateAtSpecifiedTime(packet, header, response); return
+            this.buildResponse(evaluateAtSpecifiedTimeResponse);
         } finally {
         }
     }
@@ -125,17 +112,28 @@ public class ExtendedOperationResource {
         CDSOutput output = CdsObjectAssist.cdsObjectFromByteArray(data.getBytes(), CDSOutput.class);
 
         List<ImmunizationEvaluation> evaluations = this.vmr2Fhir.getEvaluations(output);
-        List<ImmunizationRecommendation> recommendations = this.vmr2Fhir.getRecommendations(output);
+        ImmunizationRecommendation recommendation = this.vmr2Fhir.getRecommendation(output);
 
-        Bundle bundle = new Bundle();
-        List<BundleEntryComponent> entries = new ArrayList<BundleEntryComponent>();
+        Parameters parameters = new Parameters();
 
-        entries.addAll(this.convertToBundleComponents(evaluations));
-        entries.addAll(this.convertToBundleComponents(recommendations));
+        ParametersParameterComponent recommendationParameter = new ParametersParameterComponent();
+        recommendationParameter.setName("recommendation");
+        recommendationParameter.setResource(recommendation);
+        parameters.addParameter(recommendationParameter);
 
-        bundle.setEntry(entries);
+        ParametersParameterComponent evaluationParameter = new ParametersParameterComponent();
+        evaluationParameter.setName("evaluation");
 
-        return Response.ok(bundle).type(MediaType.APPLICATION_XML).build();
+        for (ImmunizationEvaluation evaluation : evaluations) {
+            ParametersParameterComponent evaluationPart = new ParametersParameterComponent();
+            evaluationPart.setResource(evaluation);
+
+            evaluationParameter.addPart(evaluationPart);
+        }
+
+        parameters.addParameter(evaluationParameter);
+
+        return Response.ok(parameters).type(MediaType.APPLICATION_XML).build();
     }
 
     protected <U extends DomainResource> List<BundleEntryComponent> convertToBundleComponents(List<U> resources) {
@@ -156,15 +154,56 @@ public class ExtendedOperationResource {
         SemanticPayload semanticPayload = new SemanticPayload();
         semanticPayload.getBase64EncodedPayload().add(encodedPacket.getBytes());
 
+        EntityIdentifier informationModelSSId = new EntityIdentifier();
+        informationModelSSId.setScopingEntityId("org.opencds.vmr");
+        informationModelSSId.setBusinessId("VMR");
+        informationModelSSId.setVersion("1.0");
+
+        semanticPayload.setInformationModelSSId(informationModelSSId);
+
+        EntityIdentifier containingEntityId = new EntityIdentifier();
+        containingEntityId.setScopingEntityId("org.nyc.cir");
+        containingEntityId.setBusinessId("ICEData");
+        containingEntityId.setVersion("1.0.0");
+
+        ItemIdentifier driId = new ItemIdentifier();
+        driId.setContainingEntityId(containingEntityId);
+        driId.setItemId("cdsPayload");
+
         DataRequirementItemData item = new DataRequirementItemData();
         item.setData(semanticPayload);
+        item.setDriId(driId);
+
+        EntityIdentifier kmId = new EntityIdentifier();
+        kmId.setScopingEntityId("org.nyc.cir");
+        kmId.setBusinessId("ICE");
+        kmId.setVersion("1.0.0");
+
+        KMEvaluationRequest kmEvaluationRequest = new KMEvaluationRequest();
+        kmEvaluationRequest.setKmId(kmId);
 
         EvaluationRequest evaluationRequest = new EvaluationRequest();
         evaluationRequest.getDataRequirementItemData().add(item);
+        evaluationRequest.getKmEvaluationRequest().add(kmEvaluationRequest);
+        evaluationRequest.setClientLanguage("en");
+        evaluationRequest.setClientTimeZoneOffset("+0000");
 
-        Evaluate packet = new Evaluate();
+        InteractionIdentifier interactionId = new InteractionIdentifier();
+        interactionId.setScopingEntityId("org.nyc.cir");
+        interactionId.setInteractionId("123456");
+
+        try {
+            GregorianCalendar calendar = new GregorianCalendar();
+            XMLGregorianCalendar xmlDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar);
+            interactionId.setSubmissionTime(xmlDate);
+        } catch (DatatypeConfigurationException exception) {
+            log.debug("Cannot create date");
+        }
+
+        EvaluateAtSpecifiedTime packet = new EvaluateAtSpecifiedTime();
         packet.setEvaluationRequest(evaluationRequest);
+        packet.setInteractionId(interactionId);
 
-        return CdsObjectAssist.cdsObjectToString(packet, Evaluate.class);
+        return CdsObjectAssist.cdsObjectToString(packet, EvaluateAtSpecifiedTime.class);
     }
 }
