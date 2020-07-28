@@ -227,26 +227,26 @@ public class ExtendedOperationResource {
     private void fixCDSInput(CDSInput input) {
         CDSContext cdsContext = new CDSContext();
         CD cdsSystemUserPreferredLanguage = new CD();
-        cdsSystemUserPreferredLanguage.setCode("en");
-        cdsSystemUserPreferredLanguage.setCodeSystem("2.16.840.1.113883.6.99");
-        cdsSystemUserPreferredLanguage.setDisplayName("English");
+        cdsSystemUserPreferredLanguage.setCode(Config.getDefaultLanguageCode());
+        cdsSystemUserPreferredLanguage.setCodeSystem(Config.getCodeSystemOid("LANG"));
+        cdsSystemUserPreferredLanguage.setDisplayName(Config.getDefaultLanguageDisplayName());
         cdsContext.setCdsSystemUserPreferredLanguage(cdsSystemUserPreferredLanguage);
         input.setCdsContext(cdsContext);
         
         II templateId = new II();
-        templateId.setRoot("2.16.840.1.113883.3.795.11.1.1");
+        templateId.setRoot(Config.getCodeSystemOid("CDS_INPUT_ROOT"));
         input.getTemplateId().add(templateId);
         
         VMR vmrInput = input.getVmrInput();
         
         II vmrInputTemplateId = new II();
-        vmrInputTemplateId.setRoot("2.16.840.1.113883.3.795.11.1.1");
+        vmrInputTemplateId.setRoot(Config.getCodeSystemOid("CDS_INPUT_ROOT"));
         vmrInput.getTemplateId().add(vmrInputTemplateId);
         
         EvaluatedPerson patient = vmrInput.getPatient();
         
         II patientTemplateId = new II();
-        patientTemplateId.setRoot("2.16.840.1.113883.3.795.11.2.1.1");
+        patientTemplateId.setRoot(Config.getCodeSystemOid("EVALUATED_PERSON_ROOT"));
         patient.getTemplateId().add(patientTemplateId);
         
         II patientId = new II();
@@ -260,7 +260,7 @@ public class ExtendedOperationResource {
             demographics.setGender(gender);
         }
         if (gender.getCodeSystem() == null) {
-            gender.setCodeSystem("2.16.840.1.113883.5.1");
+            gender.setCodeSystem(Config.getCodeSystemOid("GENDER"));
         }
         
         List<ObservationResult> observationResults = patient.getClinicalStatements().getObservationResults().getObservationResult();
@@ -273,7 +273,7 @@ public class ExtendedOperationResource {
             List<II> observationTemplateIds = observationResult.getTemplateId();
             if (observationTemplateIds.isEmpty()) {
                 II observationTemplateId = new II();
-                observationTemplateId.setRoot("2.16.840.1.113883.3.795.11.6.3.1");
+                observationTemplateId.setRoot(Config.getCodeSystemOid("OBSERVATION_RESULT_ROOT"));
                 observationTemplateIds.add(observationTemplateId);
             }
         }
@@ -294,7 +294,7 @@ public class ExtendedOperationResource {
             List<II> saeTemplateIds = substanceAdministrationEvent.getTemplateId();
             if (saeTemplateIds.isEmpty()) {
                 II saeTemplateId = new II();
-                saeTemplateId.setRoot("2.16.840.1.113883.3.795.11.6.3.1");
+                saeTemplateId.setRoot(Config.getCodeSystemOid("SUBSTANCE_ADMINISTRATION_EVENT_ROOT"));
                 saeTemplateIds.add(saeTemplateId);
             }
             
@@ -304,7 +304,7 @@ public class ExtendedOperationResource {
                 substanceAdministrationEvent.setSubstanceAdministrationGeneralPurpose(substanceAdministrationGeneralPurpose);
             }
             if (substanceAdministrationGeneralPurpose.getCode() == null || substanceAdministrationGeneralPurpose.getCode().isEmpty()) {
-                substanceAdministrationGeneralPurpose.setCode("384810002");
+                substanceAdministrationGeneralPurpose.setCode(Config.getGeneralPurposeCode());
                 substanceAdministrationGeneralPurpose.setCodeSystem(Config.getCodeSystemOid("GENERAL_PURPOSE"));
             }
             AdministrableSubstance substance = substanceAdministrationEvent.getSubstance();
