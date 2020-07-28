@@ -25,7 +25,6 @@ import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.transform.TransformerException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Date;
 import javax.ws.rs.HeaderParam;
 
@@ -155,12 +154,11 @@ public class ExtendedOperationResource {
         log.info(String.format("%s immunizations=%s", METHODNAME, immunizations));
 
         CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations);
-        String packet = this.createEvaluateAtSpecifiedTime(specifiedTime, input);
+        EvaluateAtSpecifiedTime evaluateAtSpecifiedTime = this.createEvaluateAtSpecifiedTime(specifiedTime, input);
 
-        Response evaluateAtSpecifiedTimeResponse
-                = evaluateResource.evaluateAtSpecifiedTime(packet, header, response);
+        EvaluationResponse evaluationResponse = evaluateResource.evaluateAtSpecifiedTimeBase(evaluateAtSpecifiedTime);
 
-        Parameters out = this.buildParameters(evaluateAtSpecifiedTimeResponse, accept);
+        Parameters out = this.buildParameters(evaluationResponse, accept);
 
         final String outdata = outParser.encodeResourceToString(out);
 
@@ -170,15 +168,12 @@ public class ExtendedOperationResource {
         return Response.ok(outdata).type(accept).build();
     }
 
-    protected Parameters buildParameters(Response response, String mediaType)
+    protected Parameters buildParameters(EvaluationResponse evaluationResponse, String mediaType)
             throws ParseException, UnsupportedEncodingException, IOException, InvalidDriDataFormatExceptionFault,
             UnrecognizedLanguageExceptionFault, RequiredDataNotProvidedExceptionFault,
             UnsupportedLanguageExceptionFault, UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
             InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
-        final ObjectMapper mapper = new ObjectMapper();
 
-        EvaluationResponse evaluationResponse = mapper.readValue(response.readEntity(String.class),
-                EvaluationResponse.class);
         String data = MarshalUtils.getCdsOutputStringFromEvaluationResponse(evaluationResponse);
 
         CDSOutput output = CdsObjectAssist.cdsObjectFromByteArray(data.getBytes(), CDSOutput.class);
@@ -218,7 +213,7 @@ public class ExtendedOperationResource {
         return entries;
     }
 
-    protected String createEvaluateAtSpecifiedTime(XMLGregorianCalendar specifiedTime, CDSInput input) throws DatatypeConfigurationException {
+    protected EvaluateAtSpecifiedTime createEvaluateAtSpecifiedTime(XMLGregorianCalendar specifiedTime, CDSInput input) throws DatatypeConfigurationException {
         String payload = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
         String encodedPacket = Base64.getEncoder().encodeToString(payload.getBytes());
 
@@ -276,7 +271,7 @@ public class ExtendedOperationResource {
         evaluateAtSpecifiedTime.setInteractionId(interactionId);
         evaluateAtSpecifiedTime.setSpecifiedTime(specifiedTime);
 
-        return CdsObjectAssist.cdsObjectToString(evaluateAtSpecifiedTime, EvaluateAtSpecifiedTime.class);
+        return evaluateAtSpecifiedTime;
     }
 
 }

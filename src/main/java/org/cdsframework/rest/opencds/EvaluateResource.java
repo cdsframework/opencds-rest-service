@@ -96,7 +96,7 @@ public class EvaluateResource {
     }
 
     @GET
-    @Produces({ MediaType.TEXT_PLAIN })
+    @Produces({MediaType.TEXT_PLAIN})
     @Path("tz")
     public String tz() {
         return TimeZone.getDefault().getID();
@@ -125,8 +125,8 @@ public class EvaluateResource {
      * @throws TransformerException
      */
     @POST
-    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Path("evaluate")
     public Response evaluate(final String evaluateString, @Context final HttpHeaders header,
             @Context final HttpServletResponse response)
@@ -162,10 +162,8 @@ public class EvaluateResource {
         }
 
         try {
-            preEvaluate(evaluate);
             Response.ResponseBuilder responseBuilder;
-            final EvaluateResponse evaluateResponse = evaluationService.evaluate(evaluate);
-            final EvaluationResponse evaluationResponse = evaluateResponse.getEvaluationResponse();
+            final EvaluationResponse evaluationResponse = evaluateBase(evaluate);
 
             final List<MediaType> acceptableMediaTypes = header.getAcceptableMediaTypes();
             log.debug(METHODNAME + "acceptableMediaTypes=" + acceptableMediaTypes);
@@ -183,6 +181,17 @@ public class EvaluateResource {
         } finally {
 
         }
+    }
+
+    public EvaluationResponse evaluateBase(final Evaluate evaluate)
+            throws InvalidDriDataFormatExceptionFault, UnrecognizedLanguageExceptionFault,
+            RequiredDataNotProvidedExceptionFault, UnsupportedLanguageExceptionFault,
+            UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
+            InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault {
+        preEvaluate(evaluate);
+        final EvaluateResponse evaluateResponse = evaluationService.evaluate(evaluate);
+        final EvaluationResponse evaluationResponse = evaluateResponse.getEvaluationResponse();
+        return evaluationResponse;
     }
 
     /**
@@ -207,8 +216,8 @@ public class EvaluateResource {
      * @throws javax.xml.transform.TransformerException
      */
     @POST
-    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Path("evaluateAtSpecifiedTime")
     public Response evaluateAtSpecifiedTime(final String evaluateAtSpecifiedTimeString,
             @Context final HttpHeaders header, @Context final HttpServletResponse response)
@@ -248,11 +257,8 @@ public class EvaluateResource {
 
         try {
 
-            preEvaluate(evaluateAtSpecifiedTime);
             Response.ResponseBuilder responseBuilder;
-            final EvaluateAtSpecifiedTimeResponse evaluateAtSpecifiedTimeResponse = evaluationService
-                    .evaluateAtSpecifiedTime(evaluateAtSpecifiedTime);
-            final EvaluationResponse evaluationResponse = evaluateAtSpecifiedTimeResponse.getEvaluationResponse();
+            final EvaluationResponse evaluationResponse = evaluateAtSpecifiedTimeBase(evaluateAtSpecifiedTime);
 
             final List<MediaType> acceptableMediaTypes = header.getAcceptableMediaTypes();
             log.debug(METHODNAME + "acceptableMediaTypes=" + acceptableMediaTypes);
@@ -270,6 +276,17 @@ public class EvaluateResource {
         } finally {
 
         }
+    }
+
+    public EvaluationResponse evaluateAtSpecifiedTimeBase(final EvaluateAtSpecifiedTime evaluateAtSpecifiedTime)
+            throws InvalidDriDataFormatExceptionFault, UnrecognizedLanguageExceptionFault,
+            RequiredDataNotProvidedExceptionFault, UnsupportedLanguageExceptionFault,
+            UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
+            InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault {
+        preEvaluate(evaluateAtSpecifiedTime);
+        final EvaluateAtSpecifiedTimeResponse evaluateAtSpecifiedTimeResponse = evaluationService.evaluateAtSpecifiedTime(evaluateAtSpecifiedTime);
+        final EvaluationResponse evaluationResponse = evaluateAtSpecifiedTimeResponse.getEvaluationResponse();
+        return evaluationResponse;
     }
 
     /**
