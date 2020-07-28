@@ -87,8 +87,12 @@ public class ExtendedOperationResource {
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
     @Path("$immds-forecast")
-    public Response getImmdsForecast(@HeaderParam("accept") String accept,
-            final String fhirData, @Context final HttpHeaders header, @Context final HttpServletResponse response)
+    public Response getImmdsForecast(
+            @HeaderParam("content-type") final String contentType,
+            @HeaderParam("accept") final String accept,
+            final String fhirData,
+            @Context final HttpHeaders header,
+            @Context final HttpServletResponse response)
             throws ParseException, UnsupportedEncodingException, IOException, InvalidDriDataFormatExceptionFault,
             UnrecognizedLanguageExceptionFault, RequiredDataNotProvidedExceptionFault,
             UnsupportedLanguageExceptionFault, UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
@@ -99,19 +103,29 @@ public class ExtendedOperationResource {
         log.info(String.format("%s fhirData=%s", METHODNAME, fhirData));
 
         final FhirContext ctx = FhirContext.forR4();
-        IParser parser;
-
+        IParser inParser;
+        if (contentType == null) {
+            throw new IllegalArgumentException("content-type header is null!");
+        } else if (MediaType.APPLICATION_JSON.equalsIgnoreCase(contentType)) {
+            inParser = ctx.newJsonParser();
+        } else if (MediaType.APPLICATION_XML.equalsIgnoreCase(contentType)) {
+            inParser = ctx.newXmlParser();
+        } else {
+            throw new IllegalArgumentException("content-type header illegal value: " + contentType);
+        }
+        
+        IParser outParser;
         if (accept == null) {
             throw new IllegalArgumentException("accept header is null!");
         } else if (MediaType.APPLICATION_JSON.equalsIgnoreCase(accept)) {
-            parser = ctx.newJsonParser();
+            outParser = ctx.newJsonParser();
         } else if (MediaType.APPLICATION_XML.equalsIgnoreCase(accept)) {
-            parser = ctx.newXmlParser();
+            outParser = ctx.newXmlParser();
         } else {
             throw new IllegalArgumentException("accept header illegal value: " + accept);
         }
 
-        Parameters in = parser.parseResource(Parameters.class, fhirData);
+        Parameters in = inParser.parseResource(Parameters.class, fhirData);
 
         DateType assessmentDateType = (DateType) in.getParameter("assessmentDate");
         Date assessmentDate = assessmentDateType.getValue();
@@ -148,7 +162,7 @@ public class ExtendedOperationResource {
 
         Parameters out = this.buildParameters(evaluateAtSpecifiedTimeResponse, accept);
 
-        final String outdata = parser.encodeResourceToString(out);
+        final String outdata = outParser.encodeResourceToString(out);
 
         log.debug(String.format("%s outdata=%s", METHODNAME, outdata));
 
