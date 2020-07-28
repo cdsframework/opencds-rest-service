@@ -112,7 +112,7 @@ public class ExtendedOperationResource {
         } else {
             throw new IllegalArgumentException("content-type header illegal value: " + contentType);
         }
-        
+
         IParser outParser;
         if (accept == null) {
             throw new IllegalArgumentException("accept header is null!");
@@ -191,29 +191,32 @@ public class ExtendedOperationResource {
         ParametersParameterComponent evaluationParameter = new ParametersParameterComponent();
         evaluationParameter.setName("evaluation");
 
-        for (ImmunizationEvaluation evaluation : evaluations) {
+        evaluations.stream().map((evaluation) -> {
             ParametersParameterComponent evaluationPart = new ParametersParameterComponent();
             evaluationPart.setResource(evaluation);
-
+            return evaluationPart;
+        }).forEachOrdered((evaluationPart) -> {
             evaluationParameter.addPart(evaluationPart);
-        }
+        });
 
         parameters.addParameter(evaluationParameter);
         return parameters;
     }
 
     protected <U extends DomainResource> List<BundleEntryComponent> convertToBundleComponents(List<U> resources) {
-        List<BundleEntryComponent> entries = new ArrayList<BundleEntryComponent>();
+        List<BundleEntryComponent> entries = new ArrayList<>();
 
-        for (DomainResource resource : resources) {
+        resources.forEach((resource) -> {
             BundleEntryComponent entry = new BundleEntryComponent();
             entry.setResource(resource);
-        }
+        });
 
         return entries;
     }
 
-    protected EvaluateAtSpecifiedTime createEvaluateAtSpecifiedTime(XMLGregorianCalendar specifiedTime, CDSInput input) throws DatatypeConfigurationException {
+    protected EvaluateAtSpecifiedTime createEvaluateAtSpecifiedTime(XMLGregorianCalendar specifiedTime, CDSInput input)
+            throws DatatypeConfigurationException {
+        final String METHODNAME = "createEvaluateAtSpecifiedTime ";
         String payload = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
         String encodedPacket = Base64.getEncoder().encodeToString(payload.getBytes());
 

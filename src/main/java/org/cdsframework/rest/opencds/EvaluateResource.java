@@ -269,7 +269,6 @@ public class EvaluateResource {
             } else {
                 final ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 MarshalUtils.marshal(evaluationResponse, stream);
-                stream.toByteArray();
                 responseBuilder = Response.ok(new String(stream.toByteArray())).type(MediaType.APPLICATION_XML);
             }
             return responseBuilder.build();
