@@ -1,5 +1,7 @@
 package org.cdsframework.rest.opencds;
 
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.IParser;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
@@ -24,6 +26,8 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.transform.TransformerException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Date;
+import javax.ws.rs.HeaderParam;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,6 +36,7 @@ import org.cdsframework.messageconverter.Fhir2Vmr;
 import org.cdsframework.messageconverter.Vmr2Fhir;
 import org.cdsframework.rest.opencds.utils.MarshalUtils;
 import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.ImmunizationEvaluation;
@@ -39,6 +44,7 @@ import org.hl7.fhir.r4.model.ImmunizationRecommendation;
 import org.hl7.fhir.r4.model.Parameters;
 import org.hl7.fhir.r4.model.Parameters.ParametersParameterComponent;
 import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Resource;
 import org.omg.dss.DSSRuntimeExceptionFault;
 import org.omg.dss.EvaluationExceptionFault;
 import org.omg.dss.InvalidDriDataFormatExceptionFault;
@@ -78,27 +84,79 @@ public class ExtendedOperationResource {
     }
 
     @POST
-    @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
-    @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML, MediaType.TEXT_PLAIN })
-    @Path("Patient/{patientId}/$evaluateAtSpecifiedTime")
-    public Response evaluateAtSpecifiedTime(Patient patient, List<Immunization> immunizations,
-            @Context final HttpHeaders header, @Context final HttpServletResponse response)
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+    @Path("$immds-forecast")
+    public Response getImmdsForecast(@HeaderParam("accept") String accept,
+            final String fhirData, @Context final HttpHeaders header, @Context final HttpServletResponse response)
             throws ParseException, UnsupportedEncodingException, IOException, InvalidDriDataFormatExceptionFault,
             UnrecognizedLanguageExceptionFault, RequiredDataNotProvidedExceptionFault,
             UnsupportedLanguageExceptionFault, UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
-            InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException {
-        try {
-            CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations);
-            String packet = this.createPacket(input);
+            InvalidTimeZoneOffsetExceptionFault, DSSRuntimeExceptionFault, JAXBException, TransformerException, DatatypeConfigurationException {
+        final String METHODNAME = "getImmdsForecast ";
+        final long start = System.nanoTime();
 
-            Response evaluateAtSpecifiedTimeResponse =
-            evaluateResource.evaluateAtSpecifiedTime(packet, header, response); return
-            this.buildResponse(evaluateAtSpecifiedTimeResponse);
-        } finally {
+        log.info(String.format("%s fhirData=%s", METHODNAME, fhirData));
+
+        final FhirContext ctx = FhirContext.forR4();
+        IParser parser;
+
+        if (accept == null) {
+            throw new IllegalArgumentException("accept header is null!");
+        } else if (MediaType.APPLICATION_JSON.equalsIgnoreCase(accept)) {
+            parser = ctx.newJsonParser();
+        } else if (MediaType.APPLICATION_XML.equalsIgnoreCase(accept)) {
+            parser = ctx.newXmlParser();
+        } else {
+            throw new IllegalArgumentException("accept header illegal value: " + accept);
         }
+
+        Parameters in = parser.parseResource(Parameters.class, fhirData);
+
+        DateType assessmentDateType = (DateType) in.getParameter("assessmentDate");
+        Date assessmentDate = assessmentDateType.getValue();
+        if (assessmentDate == null) {
+            assessmentDate = new Date();
+        }
+        XMLGregorianCalendar specifiedTime = DatatypeFactory.newInstance().newXMLGregorianCalendar(assessmentDate.toInstant().toString());
+
+        Patient patient = null;
+        List<Immunization> immunizations = new ArrayList<>();
+
+        List<ParametersParameterComponent> parameters = in.getParameter();
+        for (ParametersParameterComponent parameter : parameters) {
+            Resource resource = parameter.getResource();
+            if (resource instanceof Patient) {
+                if (patient == null) {
+                    patient = (Patient) resource;
+                } else {
+                    throw new IllegalArgumentException("multiple patient resources submitted!");
+                }
+            } else if (resource instanceof Immunization) {
+                immunizations.add((Immunization) resource);
+            }
+        }
+        log.info(String.format("%s specifiedTime=%s", METHODNAME, specifiedTime));
+        log.info(String.format("%s patient=%s", METHODNAME, patient));
+        log.info(String.format("%s immunizations=%s", METHODNAME, immunizations));
+
+        CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations);
+        String packet = this.createEvaluateAtSpecifiedTime(specifiedTime, input);
+
+        Response evaluateAtSpecifiedTimeResponse
+                = evaluateResource.evaluateAtSpecifiedTime(packet, header, response);
+
+        Parameters out = this.buildParameters(evaluateAtSpecifiedTimeResponse, accept);
+
+        final String outdata = parser.encodeResourceToString(out);
+
+        log.debug(String.format("%s outdata=%s", METHODNAME, outdata));
+
+        log.info(String.format("%s duration: %sms", METHODNAME, (System.nanoTime() - start) / 1000000));
+        return Response.ok(outdata).type(accept).build();
     }
 
-    protected Response buildResponse(Response response)
+    protected Parameters buildParameters(Response response, String mediaType)
             throws ParseException, UnsupportedEncodingException, IOException, InvalidDriDataFormatExceptionFault,
             UnrecognizedLanguageExceptionFault, RequiredDataNotProvidedExceptionFault,
             UnsupportedLanguageExceptionFault, UnrecognizedScopedEntityExceptionFault, EvaluationExceptionFault,
@@ -132,8 +190,7 @@ public class ExtendedOperationResource {
         }
 
         parameters.addParameter(evaluationParameter);
-
-        return Response.ok(parameters).type(MediaType.APPLICATION_XML).build();
+        return parameters;
     }
 
     protected <U extends DomainResource> List<BundleEntryComponent> convertToBundleComponents(List<U> resources) {
@@ -147,7 +204,7 @@ public class ExtendedOperationResource {
         return entries;
     }
 
-    protected String createPacket(CDSInput input) {
+    protected String createEvaluateAtSpecifiedTime(XMLGregorianCalendar specifiedTime, CDSInput input) throws DatatypeConfigurationException {
         String payload = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
         String encodedPacket = Base64.getEncoder().encodeToString(payload.getBytes());
 
@@ -200,10 +257,12 @@ public class ExtendedOperationResource {
             log.debug("Cannot create date");
         }
 
-        EvaluateAtSpecifiedTime packet = new EvaluateAtSpecifiedTime();
-        packet.setEvaluationRequest(evaluationRequest);
-        packet.setInteractionId(interactionId);
+        EvaluateAtSpecifiedTime evaluateAtSpecifiedTime = new EvaluateAtSpecifiedTime();
+        evaluateAtSpecifiedTime.setEvaluationRequest(evaluationRequest);
+        evaluateAtSpecifiedTime.setInteractionId(interactionId);
+        evaluateAtSpecifiedTime.setSpecifiedTime(specifiedTime);
 
-        return CdsObjectAssist.cdsObjectToString(packet, EvaluateAtSpecifiedTime.class);
+        return CdsObjectAssist.cdsObjectToString(evaluateAtSpecifiedTime, EvaluateAtSpecifiedTime.class);
     }
+
 }
