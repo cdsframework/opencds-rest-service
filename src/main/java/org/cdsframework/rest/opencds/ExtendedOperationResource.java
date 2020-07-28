@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.GregorianCalendar;
 import java.util.List;
 
@@ -26,6 +25,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.transform.TransformerException;
 
 import java.util.Date;
+import java.util.UUID;
 import javax.ws.rs.HeaderParam;
 
 import org.apache.commons.logging.Log;
@@ -40,6 +40,7 @@ import org.hl7.fhir.r4.model.DomainResource;
 import org.hl7.fhir.r4.model.Immunization;
 import org.hl7.fhir.r4.model.ImmunizationEvaluation;
 import org.hl7.fhir.r4.model.ImmunizationRecommendation;
+import org.hl7.fhir.r4.model.Observation;
 import org.hl7.fhir.r4.model.Parameters;
 import org.hl7.fhir.r4.model.Parameters.ParametersParameterComponent;
 import org.hl7.fhir.r4.model.Patient;
@@ -61,8 +62,15 @@ import org.omg.dss.evaluation.requestresponse.DataRequirementItemData;
 import org.omg.dss.evaluation.requestresponse.EvaluationRequest;
 import org.omg.dss.evaluation.requestresponse.EvaluationResponse;
 import org.omg.dss.evaluation.requestresponse.KMEvaluationRequest;
+import org.opencds.vmr.v1_0.schema.CD;
+import org.opencds.vmr.v1_0.schema.CDSContext;
 import org.opencds.vmr.v1_0.schema.CDSInput;
 import org.opencds.vmr.v1_0.schema.CDSOutput;
+import org.opencds.vmr.v1_0.schema.EvaluatedPerson;
+import org.opencds.vmr.v1_0.schema.II;
+import org.opencds.vmr.v1_0.schema.ObservationResult;
+import org.opencds.vmr.v1_0.schema.SubstanceAdministrationEvent;
+import org.opencds.vmr.v1_0.schema.VMR;
 
 public class ExtendedOperationResource {
 
@@ -153,7 +161,7 @@ public class ExtendedOperationResource {
         log.info(String.format("%s patient=%s", METHODNAME, patient));
         log.info(String.format("%s immunizations=%s", METHODNAME, immunizations));
 
-        CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations);
+        CDSInput input = this.fhir2Vmr.getCdsInputFromFhir(patient, immunizations, new ArrayList<>());
         EvaluateAtSpecifiedTime evaluateAtSpecifiedTime = this.createEvaluateAtSpecifiedTime(specifiedTime, input);
 
         EvaluationResponse evaluationResponse = evaluateResource.evaluateAtSpecifiedTimeBase(evaluateAtSpecifiedTime);
@@ -214,14 +222,94 @@ public class ExtendedOperationResource {
         return entries;
     }
 
+    private void fixCDSInput(CDSInput input) {
+        CDSContext cdsContext = new CDSContext();
+        CD cdsSystemUserPreferredLanguage = new CD();
+        cdsSystemUserPreferredLanguage.setCode("en");
+        cdsSystemUserPreferredLanguage.setCodeSystem("2.16.840.1.113883.6.99");
+        cdsSystemUserPreferredLanguage.setDisplayName("English");
+        cdsContext.setCdsSystemUserPreferredLanguage(cdsSystemUserPreferredLanguage);
+        input.setCdsContext(cdsContext);
+
+        II templateId = new II();
+        templateId.setRoot("2.16.840.1.113883.3.795.11.1.1");
+        input.getTemplateId().add(templateId);
+
+        VMR vmrInput = input.getVmrInput();
+
+        II vmrInputTemplateId = new II();
+        vmrInputTemplateId.setRoot("2.16.840.1.113883.3.795.11.1.1");
+        vmrInput.getTemplateId().add(vmrInputTemplateId);
+
+        EvaluatedPerson patient = vmrInput.getPatient();
+
+        II patientTemplateId = new II();
+        patientTemplateId.setRoot("2.16.840.1.113883.3.795.11.2.1.1");
+        patient.getTemplateId().add(patientTemplateId);
+
+        II patientId = new II();
+        patientId.setRoot(UUID.randomUUID().toString());
+        patient.setId(patientId);
+
+        List<ObservationResult> observationResults = patient.getClinicalStatements().getObservationResults().getObservationResult();
+        for (ObservationResult observationResult : observationResults) {
+            if (observationResult.getId() == null) {
+                II observationId = new II();
+                observationId.setRoot(UUID.randomUUID().toString());
+                observationResult.setId(observationId);
+            }
+            List<II> observationTemplateIds = observationResult.getTemplateId();
+            if (observationTemplateIds.isEmpty()) {
+                II observationTemplateId = new II();
+                observationTemplateId.setRoot("2.16.840.1.113883.3.795.11.6.3.1");
+                observationTemplateIds.add(observationTemplateId);
+            }
+        }
+
+        EvaluatedPerson.ClinicalStatements.SubstanceAdministrationEvents substanceAdministrationEventsInstance = patient.getClinicalStatements().getSubstanceAdministrationEvents();
+        if (substanceAdministrationEventsInstance == null) {
+            substanceAdministrationEventsInstance = new EvaluatedPerson.ClinicalStatements.SubstanceAdministrationEvents();
+            patient.getClinicalStatements().setSubstanceAdministrationEvents(substanceAdministrationEventsInstance);
+        }
+        List<SubstanceAdministrationEvent> substanceAdministrationEvents = substanceAdministrationEventsInstance.getSubstanceAdministrationEvent();
+
+        for (SubstanceAdministrationEvent substanceAdministrationEvent : substanceAdministrationEvents) {
+            if (substanceAdministrationEvent.getId() == null) {
+                II saeId = new II();
+                saeId.setRoot(UUID.randomUUID().toString());
+                substanceAdministrationEvent.setId(saeId);
+            }
+            List<II> saeTemplateIds = substanceAdministrationEvent.getTemplateId();
+            if (saeTemplateIds.isEmpty()) {
+                II saeTemplateId = new II();
+                saeTemplateId.setRoot("2.16.840.1.113883.3.795.11.6.3.1");
+                saeTemplateIds.add(saeTemplateId);
+            }
+            
+            CD substanceAdministrationGeneralPurpose = substanceAdministrationEvent.getSubstanceAdministrationGeneralPurpose();
+            if (substanceAdministrationGeneralPurpose == null) {
+                substanceAdministrationGeneralPurpose = new CD();
+                substanceAdministrationEvent.setSubstanceAdministrationGeneralPurpose(substanceAdministrationGeneralPurpose);
+            }
+            if (substanceAdministrationGeneralPurpose.getCode() == null || substanceAdministrationGeneralPurpose.getCode().isEmpty()) {
+                substanceAdministrationGeneralPurpose.setCode("384810002");
+                substanceAdministrationGeneralPurpose.setCodeSystem("2.16.840.1.113883.6.5");
+            }
+        }
+    }
+
     protected EvaluateAtSpecifiedTime createEvaluateAtSpecifiedTime(XMLGregorianCalendar specifiedTime, CDSInput input)
             throws DatatypeConfigurationException {
         final String METHODNAME = "createEvaluateAtSpecifiedTime ";
+
+        fixCDSInput(input);
+
         String payload = CdsObjectAssist.cdsObjectToString(input, CDSInput.class);
-        String encodedPacket = Base64.getEncoder().encodeToString(payload.getBytes());
+
+        log.info(String.format("%s payload=%s", METHODNAME, payload));
 
         SemanticPayload semanticPayload = new SemanticPayload();
-        semanticPayload.getBase64EncodedPayload().add(encodedPacket.getBytes());
+        semanticPayload.getBase64EncodedPayload().add(payload.getBytes());
 
         EntityIdentifier informationModelSSId = new EntityIdentifier();
         informationModelSSId.setScopingEntityId("org.opencds.vmr");
@@ -240,7 +328,7 @@ public class ExtendedOperationResource {
         driId.setItemId("cdsPayload");
 
         DataRequirementItemData item = new DataRequirementItemData();
-        item.setData(semanticPayload);
+        item.setData(semanticPayload); // cehck
         item.setDriId(driId);
 
         EntityIdentifier kmId = new EntityIdentifier();
@@ -257,17 +345,13 @@ public class ExtendedOperationResource {
         evaluationRequest.setClientLanguage("en");
         evaluationRequest.setClientTimeZoneOffset("+0000");
 
+        GregorianCalendar calendar = new GregorianCalendar();
+        XMLGregorianCalendar xmlDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar);
+
         InteractionIdentifier interactionId = new InteractionIdentifier();
         interactionId.setScopingEntityId("org.nyc.cir");
         interactionId.setInteractionId("123456");
-
-        try {
-            GregorianCalendar calendar = new GregorianCalendar();
-            XMLGregorianCalendar xmlDate = DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar);
-            interactionId.setSubmissionTime(xmlDate);
-        } catch (DatatypeConfigurationException exception) {
-            log.debug("Cannot create date");
-        }
+        interactionId.setSubmissionTime(xmlDate);
 
         EvaluateAtSpecifiedTime evaluateAtSpecifiedTime = new EvaluateAtSpecifiedTime();
         evaluateAtSpecifiedTime.setEvaluationRequest(evaluationRequest);
