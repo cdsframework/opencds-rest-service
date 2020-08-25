@@ -96,7 +96,7 @@ public class EvaluateResource {
     }
 
     @GET
-    @Produces({ MediaType.TEXT_PLAIN })
+    @Produces({MediaType.TEXT_PLAIN})
     @Path("tz")
     public String tz() {
         return TimeZone.getDefault().getID();
@@ -125,8 +125,8 @@ public class EvaluateResource {
      * @throws TransformerException
      */
     @POST
-    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Path("evaluate")
     public Response evaluate(final String evaluateString, @Context final HttpHeaders header,
             @Context final HttpServletResponse response)
@@ -207,8 +207,8 @@ public class EvaluateResource {
      * @throws javax.xml.transform.TransformerException
      */
     @POST
-    @Consumes({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON })
-    @Produces({ MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN })
+    @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
     @Path("evaluateAtSpecifiedTime")
     public Response evaluateAtSpecifiedTime(final String evaluateAtSpecifiedTimeString,
             @Context final HttpHeaders header, @Context final HttpServletResponse response)
@@ -308,13 +308,13 @@ public class EvaluateResource {
     private void preEvaluate(final EvaluationRequest evaluationRequest) {
         final String METHODNAME = "preEvaluate ";
         if (evaluationRequest == null) {
-            log.debug(METHODNAME + "evaluationRequest is null!");
+            log.info(METHODNAME + "evaluationRequest is null!");
             return;
         }
 
         if (evaluationRequest.getKmEvaluationRequest() == null
                 || evaluationRequest.getKmEvaluationRequest().isEmpty()) {
-            log.debug(METHODNAME + "evaluationRequest.getKmEvaluationRequest() is null or empty!");
+            log.info(METHODNAME + "evaluationRequest.getKmEvaluationRequest() is null or empty!");
             return;
         }
 
@@ -322,7 +322,7 @@ public class EvaluateResource {
         try {
             final Builder preEvaluateBuilder = getPreEvaluateInvocationBuilder();
             if (preEvaluateBuilder == null) {
-                log.debug(METHODNAME + "builder is null - skipping preEvaluate");
+                log.info(METHODNAME + "builder is null - skipping preEvaluate");
                 return;
             }
             Response response;
@@ -340,26 +340,58 @@ public class EvaluateResource {
             if (instanceId == null || instanceId.trim().isEmpty()) {
                 throw new IllegalStateException(METHODNAME + "preEvaluateUuid is null!");
             } else {
-                log.debug(METHODNAME + "instanceId: " + instanceId);
+                log.info(METHODNAME + "instanceId: " + instanceId);
             }
             updateCheck.setInstanceId(instanceId);
 
             // set the environment
             final String environment = context.getContextPath().toLowerCase().contains("test") ? "TEST" : "PRODUCTION";
-            log.debug(METHODNAME + "environment: " + environment);
+            log.info(METHODNAME + "environment: " + environment);
             updateCheck.setEnvironment(environment);
 
             switch (hookType) {
                 case ENTITY_IDENTIFIER:
                     final List<KMEvaluationRequest> kmEvaluationRequests = evaluationRequest.getKmEvaluationRequest();
+
                     for (final KMEvaluationRequest kmEvaluationRequest : kmEvaluationRequests) {
+
+                        if (kmEvaluationRequest == null) {
+                            log.error(METHODNAME + "kmEvaluationRequest is null!");
+                            continue;
+                        }
                         EntityIdentifier entityIdentifier = kmEvaluationRequest.getKmId();
-                        final KMId kmId = KMIdImpl.create(entityIdentifier.getScopingEntityId(),
-                                entityIdentifier.getBusinessId(), entityIdentifier.getVersion());
+                        String scopingEntityId = entityIdentifier.getScopingEntityId();
+                        String businessId = entityIdentifier.getBusinessId();
+                        String version = entityIdentifier.getVersion();
+                        log.info(METHODNAME + "scopingEntityId: " + scopingEntityId);
+                        log.info(METHODNAME + "businessId: " + businessId);
+                        log.info(METHODNAME + "version: " + version);
+
+                        if (scopingEntityId == null || scopingEntityId.trim().isEmpty()) {
+                            log.error(METHODNAME + "scopingEntityId is null!");
+                            continue;
+                        }
+
+                        if (businessId == null || businessId.trim().isEmpty()) {
+                            log.error(METHODNAME + "businessId is null!");
+                            continue;
+                        }
+
+                        if (version == null || version.trim().isEmpty()) {
+                            log.error(METHODNAME + "version is null!");
+                            continue;
+                        }
+
+                        final KMId kmId = KMIdImpl.create(scopingEntityId, businessId, version);
+
                         final boolean exists = ConfigUtils.isKmExists(kmId, configurationService);
+                        log.info(METHODNAME + "exists: " + exists);
                         final KmIdCheck kmIdCheck = new KmIdCheck(kmId, exists);
+                        log.info(METHODNAME + "KmIdCheck: " + kmIdCheck);
                         updateCheck.getKmIdChecks().add(kmIdCheck);
                     }
+                    log.info(METHODNAME + "updateCheck: " + updateCheck);
+
                     response = preEvaluateBuilder.put(Entity.entity(updateCheck, MediaType.APPLICATION_JSON_TYPE));
                     final UpdateResponse updateResponse = response.readEntity(UpdateResponse.class);
                     final UpdateResponseResult result = ConfigUtils.update(updateResponse, configurationService,
@@ -385,7 +417,7 @@ public class EvaluateResource {
                     throw new IllegalStateException("Unhandled hook type: " + preEvaluateHookType.toString());
             }
 
-            log.debug(METHODNAME + "response.getStatus(): " + response.getStatus());
+            log.info(METHODNAME + "response.getStatus(): " + response.getStatus());
 
         } finally {
             log.info(METHODNAME + "duration: " + ((System.nanoTime() - start) / 1000000) + "ms");
