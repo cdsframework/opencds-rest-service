@@ -18,7 +18,7 @@
  * For more information about the this software, see https://www.hln.com/services/open-source/ or send
  * correspondence to scm@cdsframework.org.
  */
-package org.cdsframework.rest.opencds;
+package org.cdsframework.rest.opencds.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -63,7 +63,7 @@ public class MarshalUtils {
      * @return
      * @throws CdsException
      */
-    private static JAXBContext getJAXBContext(String classPackageName) throws JAXBException {
+    private static JAXBContext getJAXBContext(final String classPackageName) throws JAXBException {
         JAXBContext jaxbContext;
         if (classPackageName == null) {
             throw new IllegalArgumentException("classPackageName cannot be null.");
@@ -77,31 +77,31 @@ public class MarshalUtils {
         return jaxbContext;
     }
 
-    private static Marshaller getMarshaller(Object jaxbElement) throws JAXBException {
+    private static Marshaller getMarshaller(final Object jaxbElement) throws JAXBException {
         if (jaxbElement == null) {
             throw new IllegalArgumentException("jaxbElement cannot be null.");
         }
         return getMarshaller(jaxbElement.getClass());
     }
 
-    private static Marshaller getMarshaller(Class klass) throws JAXBException {
+    private static Marshaller getMarshaller(final Class klass) throws JAXBException {
         Marshaller result;
         if (klass == null) {
             throw new IllegalArgumentException("klass cannot be null.");
         }
-        String classPackageName = getClassPackageName(klass);
+        final String classPackageName = getClassPackageName(klass);
         log.debug("classPackageName=" + classPackageName);
         result = getJAXBContext(classPackageName).createMarshaller();
         result.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         return result;
     }
 
-    private static Unmarshaller getUnmarshaller(Class klass) throws JAXBException {
+    private static Unmarshaller getUnmarshaller(final Class klass) throws JAXBException {
         Unmarshaller result;
         if (klass == null) {
             throw new IllegalArgumentException("klass cannot be null.");
         }
-        String classPackageName = getClassPackageName(klass);
+        final String classPackageName = getClassPackageName(klass);
         result = getJAXBContext(classPackageName).createUnmarshaller();
         return result;
     }
@@ -114,12 +114,12 @@ public class MarshalUtils {
      * @param schema
      * @throws javax.xml.bind.JAXBException
      */
-    public static void marshal(Object jaxbElement, Object dst, Schema schema) throws JAXBException {
-        Marshaller marshaller = getMarshaller(jaxbElement);
+    public static void marshal(Object jaxbElement, final Object dst, final Schema schema) throws JAXBException {
+        final Marshaller marshaller = getMarshaller(jaxbElement);
         marshaller.setSchema(schema);
-            if (jaxbElement instanceof EvaluationResponse) {
-                jaxbElement = new ObjectFactory().createEvaluationResponse((EvaluationResponse) jaxbElement);
-            }
+        if (jaxbElement instanceof EvaluationResponse) {
+            jaxbElement = new ObjectFactory().createEvaluationResponse((EvaluationResponse) jaxbElement);
+        }
         if (dst instanceof ContentHandler) {
             marshaller.marshal(jaxbElement, (ContentHandler) dst);
         } else if (dst instanceof OutputStream) {
@@ -136,7 +136,7 @@ public class MarshalUtils {
      * @param os
      * @throws javax.xml.bind.JAXBException
      */
-    public static void marshal(Object jaxbElement, OutputStream os) throws JAXBException {
+    public static void marshal(final Object jaxbElement, final OutputStream os) throws JAXBException {
         marshal(jaxbElement, os, null);
     }
 
@@ -150,13 +150,14 @@ public class MarshalUtils {
      * @throws javax.xml.bind.JAXBException
      * @throws javax.xml.transform.TransformerException
      */
-    public static <S> S unmarshal(InputStream inputStream, Class<S> returnType) throws JAXBException, TransformerException {
+    public static <S> S unmarshal(final InputStream inputStream, final Class<S> returnType)
+            throws JAXBException, TransformerException {
         return unmarshal(inputStream, true, returnType);
     }
 
     /**
-     * Un-marshal an object from an InputStream after transforming the XML with the supplied
-     * XSLT.
+     * Un-marshal an object from an InputStream after transforming the XML with the
+     * supplied XSLT.
      *
      * @param <S>
      * @param inputStream
@@ -166,12 +167,14 @@ public class MarshalUtils {
      * @throws javax.xml.bind.JAXBException
      * @throws javax.xml.transform.TransformerException
      */
-    public static <S> S unmarshal(InputStream inputStream, InputStream xslInputStream, Class<S> returnType) throws JAXBException, TransformerException {
+    public static <S> S unmarshal(final InputStream inputStream, final InputStream xslInputStream,
+            final Class<S> returnType) throws JAXBException, TransformerException {
         return unmarshal(inputStream, true, xslInputStream, returnType);
     }
 
     /**
-     * Un-marshal an object from an InputStream with the option to ignore namespaces.
+     * Un-marshal an object from an InputStream with the option to ignore
+     * namespaces.
      *
      * @param <S>
      * @param inputStream
@@ -181,13 +184,14 @@ public class MarshalUtils {
      * @throws javax.xml.bind.JAXBException
      * @throws javax.xml.transform.TransformerException
      */
-    public static <S> S unmarshal(InputStream inputStream, boolean namespaceAware, Class<S> returnType) throws JAXBException, TransformerException {
+    public static <S> S unmarshal(final InputStream inputStream, final boolean namespaceAware,
+            final Class<S> returnType) throws JAXBException, TransformerException {
         return unmarshal(inputStream, namespaceAware, null, returnType);
     }
 
     /**
-     * Un-marshal an object from an InputStream after transforming the XML with the supplied
-     * XSLT (optional) with the option to ignore namespaces.
+     * Un-marshal an object from an InputStream after transforming the XML with the
+     * supplied XSLT (optional) with the option to ignore namespaces.
      *
      * @param <S>
      * @param inputStream
@@ -198,28 +202,29 @@ public class MarshalUtils {
      * @throws javax.xml.bind.JAXBException
      * @throws javax.xml.transform.TransformerConfigurationException
      */
-    public static <S> S unmarshal(InputStream inputStream, boolean namespaceAware, InputStream xslInputStream, Class<S> returnType)
+    public static <S> S unmarshal(final InputStream inputStream, final boolean namespaceAware,
+            final InputStream xslInputStream, final Class<S> returnType)
             throws JAXBException, TransformerConfigurationException, TransformerException {
         S result;
-        Unmarshaller unmarshaller = getUnmarshaller(returnType);
+        final Unmarshaller unmarshaller = getUnmarshaller(returnType);
         if (namespaceAware && xslInputStream == null) {
-            Object unmarshalledObject = unmarshaller.unmarshal(inputStream);
+            final Object unmarshalledObject = unmarshaller.unmarshal(inputStream);
             if (unmarshalledObject instanceof JAXBElement) {
                 result = (S) ((JAXBElement) unmarshalledObject).getValue();
             } else {
                 result = (S) unmarshalledObject;
             }
         } else {
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            final TransformerFactory transformerFactory = TransformerFactory.newInstance();
             InputStream localTransform = xslInputStream;
             if (!namespaceAware && xslInputStream == null) {
                 localTransform = MarshalUtils.class.getClassLoader().getResourceAsStream("nsrm.xsl");
             }
-            StreamSource xslStreamSource = new StreamSource(localTransform);
-            Transformer transformer = transformerFactory.newTransformer(xslStreamSource);
-            StreamSource xmlStreamSource = new StreamSource(inputStream);
-            JAXBContext jc = JAXBContext.newInstance(returnType);
-            JAXBResult jaxbResult = new JAXBResult(jc);
+            final StreamSource xslStreamSource = new StreamSource(localTransform);
+            final Transformer transformer = transformerFactory.newTransformer(xslStreamSource);
+            final StreamSource xmlStreamSource = new StreamSource(inputStream);
+            final JAXBContext jc = JAXBContext.newInstance(returnType);
+            final JAXBResult jaxbResult = new JAXBResult(jc);
             transformer.transform(xmlStreamSource, jaxbResult);
             result = (S) jaxbResult.getResult();
         }
@@ -233,13 +238,13 @@ public class MarshalUtils {
      * @return
      * @throws javax.xml.bind.JAXBException
      */
-    public static byte[] marshalObject(Object dataObject) throws JAXBException {
+    public static byte[] marshalObject(final Object dataObject) throws JAXBException {
         byte[] result;
         if (dataObject == null) {
             throw new IllegalArgumentException("dataObject cannot be null.");
         }
-        Marshaller marshaller = getMarshaller(dataObject.getClass());
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        final Marshaller marshaller = getMarshaller(dataObject.getClass());
+        final ByteArrayOutputStream stream = new ByteArrayOutputStream();
         marshaller.marshal(dataObject, stream);
         result = stream.toByteArray();
         return result;
@@ -254,9 +259,10 @@ public class MarshalUtils {
      * @return
      * @throws javax.xml.bind.JAXBException
      */
-    public static <S> S unmarshalObject(InputStream inputStream, Class<S> cdsObjectClass) throws JAXBException {
+    public static <S> S unmarshalObject(final InputStream inputStream, final Class<S> cdsObjectClass)
+            throws JAXBException {
         S result;
-        Unmarshaller unmarshaller = getUnmarshaller(cdsObjectClass);
+        final Unmarshaller unmarshaller = getUnmarshaller(cdsObjectClass);
         result = (S) unmarshaller.unmarshal(inputStream);
         return result;
     }
@@ -267,12 +273,12 @@ public class MarshalUtils {
      * @param klass
      * @return
      */
-    public static String getClassPackageName(Class klass) {
+    public static String getClassPackageName(final Class klass) {
         String result;
         if (klass == null) {
             throw new IllegalArgumentException("The class cannot be null.");
         }
-        String canonicalName = klass.getCanonicalName();
+        final String canonicalName = klass.getCanonicalName();
         result = canonicalName.substring(0, canonicalName.lastIndexOf("."));
         return result;
     }
