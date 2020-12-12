@@ -6,4 +6,4 @@
 **/.classpath
 **/sun-jaxb.episode
 .DS_Store
-.vscode/
+**/.vscode/*

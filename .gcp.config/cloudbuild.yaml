@@ -22,7 +22,13 @@ steps:
 - name: 'maven:3-jdk-8-slim'
   id: deploy
   entrypoint: 'mvn'
-  args: ['deploy', '-DaltDeploymentRepository=support.hln.com-snapshots::default::https://support.hln.com/artifactory/libs-release-local']
+  args: ['deploy', '-DaltDeploymentRepository=support.hln.com-snapshots::default::https://support.hln.com/artifactory/libs-snapshot-local']
   volumes:
   - name: 'm2'
     path: /root/.m2
+
+# trigger opencds ice build
+- name: gcr.io/hln-internal/gsutil-beta:master
+  dir: /root
+  entrypoint: gcloud
+  args: ['--quiet', 'beta', 'builds', 'triggers', 'run', '--branch', 'DEV', '445d0670-ae92-44fc-819c-2182e3b3d035']
