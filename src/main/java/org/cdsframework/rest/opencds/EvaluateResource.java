@@ -137,17 +137,19 @@ public class EvaluateResource {
 
         final String METHODNAME = "evaluate ";
 
+        final long start = System.nanoTime();
+
         final ObjectMapper mapper = new ObjectMapper();
 
         Evaluate evaluate;
         final MediaType mediaType = header.getMediaType();
 
-        log.debug(METHODNAME + "mediaType=" + mediaType);
-        log.debug(METHODNAME + "mediaType.toString()=" + mediaType.toString());
-        log.debug(METHODNAME + "MediaType.APPLICATION_JSON=" + MediaType.APPLICATION_JSON);
-        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_JSON)="
+        log.trace(METHODNAME + "mediaType=" + mediaType);
+        log.trace(METHODNAME + "mediaType.toString()=" + mediaType.toString());
+        log.trace(METHODNAME + "MediaType.APPLICATION_JSON=" + MediaType.APPLICATION_JSON);
+        log.trace(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_JSON)="
                 + mediaType.toString().equals(MediaType.APPLICATION_JSON));
-        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_XML)="
+        log.trace(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_XML)="
                 + mediaType.toString().equals(MediaType.APPLICATION_XML));
 
         switch (mediaType.toString()) {
@@ -168,7 +170,7 @@ public class EvaluateResource {
             final EvaluationResponse evaluationResponse = evaluateResponse.getEvaluationResponse();
 
             final List<MediaType> acceptableMediaTypes = header.getAcceptableMediaTypes();
-            log.debug(METHODNAME + "acceptableMediaTypes=" + acceptableMediaTypes);
+            log.trace(METHODNAME + "acceptableMediaTypes=" + acceptableMediaTypes);
 
             if (acceptableMediaTypes.contains(MediaType.APPLICATION_JSON_TYPE)) {
                 final String data = mapper.writeValueAsString(evaluationResponse);
@@ -181,7 +183,7 @@ public class EvaluateResource {
             }
             return responseBuilder.build();
         } finally {
-
+            log.info(METHODNAME + "duration: " + ((System.nanoTime() - start) / 1000000) + "ms");
         }
     }
 
@@ -219,17 +221,19 @@ public class EvaluateResource {
 
         final String METHODNAME = "evaluateAtSpecifiedTime ";
 
+        final long start = System.nanoTime();
+
         final ObjectMapper mapper = new ObjectMapper();
 
         EvaluateAtSpecifiedTime evaluateAtSpecifiedTime;
         final MediaType mediaType = header.getMediaType();
 
-        log.debug(METHODNAME + "mediaType=" + mediaType);
-        log.debug(METHODNAME + "mediaType.toString()=" + mediaType.toString());
-        log.debug(METHODNAME + "MediaType.APPLICATION_JSON=" + MediaType.APPLICATION_JSON);
-        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_JSON)="
+        log.trace(METHODNAME + "mediaType=" + mediaType);
+        log.trace(METHODNAME + "mediaType.toString()=" + mediaType.toString());
+        log.trace(METHODNAME + "MediaType.APPLICATION_JSON=" + MediaType.APPLICATION_JSON);
+        log.trace(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_JSON)="
                 + mediaType.toString().equals(MediaType.APPLICATION_JSON));
-        log.debug(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_XML)="
+        log.trace(METHODNAME + "mediaType.toString().equals(MediaType.APPLICATION_XML)="
                 + mediaType.toString().equals(MediaType.APPLICATION_XML));
 
         switch (mediaType.toString()) {
@@ -255,7 +259,7 @@ public class EvaluateResource {
             final EvaluationResponse evaluationResponse = evaluateAtSpecifiedTimeResponse.getEvaluationResponse();
 
             final List<MediaType> acceptableMediaTypes = header.getAcceptableMediaTypes();
-            log.debug(METHODNAME + "acceptableMediaTypes=" + acceptableMediaTypes);
+            log.trace(METHODNAME + "acceptableMediaTypes=" + acceptableMediaTypes);
 
             if (acceptableMediaTypes.contains(MediaType.APPLICATION_JSON_TYPE)) {
                 final String data = mapper.writeValueAsString(evaluationResponse);
@@ -268,7 +272,7 @@ public class EvaluateResource {
             }
             return responseBuilder.build();
         } finally {
-
+            log.info(METHODNAME + "duration: " + ((System.nanoTime() - start) / 1000000) + "ms");
         }
     }
 
@@ -280,7 +284,7 @@ public class EvaluateResource {
     private void preEvaluate(final EvaluateAtSpecifiedTime evaluateAtSpecifiedTime) {
         final String METHODNAME = "preEvaluate ";
         if (evaluateAtSpecifiedTime == null || evaluateAtSpecifiedTime.getEvaluationRequest() == null) {
-            log.debug(METHODNAME + "an evaluateAtSpecifiedTime element is null!");
+            log.trace(METHODNAME + "an evaluateAtSpecifiedTime element is null!");
             return;
         }
         preEvaluate(evaluateAtSpecifiedTime.getEvaluationRequest());
@@ -294,7 +298,7 @@ public class EvaluateResource {
     private void preEvaluate(final Evaluate evaluate) {
         final String METHODNAME = "preEvaluate ";
         if (evaluate == null || evaluate.getEvaluationRequest() == null) {
-            log.debug(METHODNAME + "an evaluate element is null!");
+            log.trace(METHODNAME + "an evaluate element is null!");
             return;
         }
         preEvaluate(evaluate.getEvaluationRequest());
@@ -308,13 +312,13 @@ public class EvaluateResource {
     private void preEvaluate(final EvaluationRequest evaluationRequest) {
         final String METHODNAME = "preEvaluate ";
         if (evaluationRequest == null) {
-            log.info(METHODNAME + "evaluationRequest is null!");
+            log.trace(METHODNAME + "evaluationRequest is null!");
             return;
         }
 
         if (evaluationRequest.getKmEvaluationRequest() == null
                 || evaluationRequest.getKmEvaluationRequest().isEmpty()) {
-            log.info(METHODNAME + "evaluationRequest.getKmEvaluationRequest() is null or empty!");
+            log.trace(METHODNAME + "evaluationRequest.getKmEvaluationRequest() is null or empty!");
             return;
         }
 
@@ -322,7 +326,7 @@ public class EvaluateResource {
         try {
             final Builder preEvaluateBuilder = getPreEvaluateInvocationBuilder();
             if (preEvaluateBuilder == null) {
-                log.info(METHODNAME + "builder is null - skipping preEvaluate");
+                log.trace(METHODNAME + "builder is null - skipping preEvaluate");
                 return;
             }
             Response response;
@@ -363,9 +367,9 @@ public class EvaluateResource {
                         String scopingEntityId = entityIdentifier.getScopingEntityId();
                         String businessId = entityIdentifier.getBusinessId();
                         String version = entityIdentifier.getVersion();
-                        log.info(METHODNAME + "scopingEntityId: " + scopingEntityId);
-                        log.info(METHODNAME + "businessId: " + businessId);
-                        log.info(METHODNAME + "version: " + version);
+                        log.debug(METHODNAME + "scopingEntityId: " + scopingEntityId);
+                        log.debug(METHODNAME + "businessId: " + businessId);
+                        log.debug(METHODNAME + "version: " + version);
 
                         if (scopingEntityId == null || scopingEntityId.trim().isEmpty()) {
                             log.error(METHODNAME + "scopingEntityId is null!");
@@ -385,12 +389,12 @@ public class EvaluateResource {
                         final KMId kmId = KMIdImpl.create(scopingEntityId, businessId, version);
 
                         final boolean exists = ConfigUtils.isKmExists(kmId, configurationService);
-                        log.info(METHODNAME + "exists: " + exists);
+                        log.debug(METHODNAME + "exists: " + exists);
                         final KmIdCheck kmIdCheck = new KmIdCheck(kmId, exists);
-                        log.info(METHODNAME + "KmIdCheck: " + kmIdCheck);
+                        log.debug(METHODNAME + "KmIdCheck: " + kmIdCheck);
                         updateCheck.getKmIdChecks().add(kmIdCheck);
                     }
-                    log.info(METHODNAME + "updateCheck: " + updateCheck);
+                    log.debug(METHODNAME + "updateCheck: " + updateCheck);
 
                     response = preEvaluateBuilder.put(Entity.entity(updateCheck, MediaType.APPLICATION_JSON_TYPE));
                     final UpdateResponse updateResponse = response.readEntity(UpdateResponse.class);
@@ -417,7 +421,7 @@ public class EvaluateResource {
                     throw new IllegalStateException("Unhandled hook type: " + preEvaluateHookType.toString());
             }
 
-            log.info(METHODNAME + "response.getStatus(): " + response.getStatus());
+            log.debug(METHODNAME + "response.getStatus(): " + response.getStatus());
 
         } finally {
             log.info(METHODNAME + "duration: " + ((System.nanoTime() - start) / 1000000) + "ms");
@@ -431,7 +435,7 @@ public class EvaluateResource {
 
             final String preEvaluateHookUri = System.getProperty("preEvaluateHookUri");
             if (preEvaluateHookUri == null || preEvaluateHookUri.trim().isEmpty()) {
-                log.debug(METHODNAME + "preEvaluateHookUri is null!");
+                log.trace(METHODNAME + "preEvaluateHookUri is null!");
                 return preEvaluateInvocationBuilder;
             } else {
                 log.debug(METHODNAME + "preEvaluateHookUri: " + preEvaluateHookUri);
@@ -455,7 +459,7 @@ public class EvaluateResource {
 
             final String preEvaluateHookUri = System.getProperty("preEvaluateHookUri");
             if (preEvaluateHookUri == null || preEvaluateHookUri.trim().isEmpty()) {
-                log.debug(METHODNAME + "preEvaluateHookUri is null!");
+                log.trace(METHODNAME + "preEvaluateHookUri is null!");
                 return preEvaluateFailureInvocationBuilder;
             } else {
                 log.debug(METHODNAME + "preEvaluateHookUri: " + preEvaluateHookUri);
@@ -472,7 +476,7 @@ public class EvaluateResource {
             final String preEvaluateTimeoutString = System.getProperty("preEvaluateTimeout");
             int preEvaluateTimeout;
             if (preEvaluateTimeoutString == null || preEvaluateTimeoutString.trim().isEmpty()) {
-                log.debug(METHODNAME + "preEvaluateTimeoutString is null!");
+                log.trace(METHODNAME + "preEvaluateTimeoutString is null!");
                 preEvaluateTimeout = DEFAULT_CLIENT_TIMEOUT;
             } else {
                 try {
@@ -481,9 +485,9 @@ public class EvaluateResource {
                     preEvaluateTimeout = DEFAULT_CLIENT_TIMEOUT;
                 }
             }
-            log.debug(METHODNAME + "preEvaluateTimeout: " + preEvaluateTimeout);
+            log.trace(METHODNAME + "preEvaluateTimeout: " + preEvaluateTimeout);
 
-            log.info(METHODNAME + "initializing invocation builder");
+            log.trace(METHODNAME + "initializing invocation builder");
 
             final ClientConfig config = new ClientConfig();
             config.register(JacksonJsonProvider.class);
