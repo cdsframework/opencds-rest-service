@@ -19,7 +19,7 @@ steps:
   - name: 'm2'
     path: /root/.m2
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '--tag=gcr.io/$PROJECT_ID/opencds-service:$BRANCH_NAME', '-f', 'docker/Dockerfile', '.']
+  args: ['build', '--tag=gcr.io/$PROJECT_ID/dss:$BRANCH_NAME', '-f', 'docker/Dockerfile', '.']
   dir: '.'
 images: ['gcr.io/$PROJECT_ID/dss']
 timeout: 900s
