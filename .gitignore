@@ -7,3 +7,4 @@
 **/sun-jaxb.episode
 .DS_Store
 **/.vscode/*
+/.idea/
